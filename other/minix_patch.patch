@@ -1,0 +1,488 @@
+From eff7b93711cd1e7c4d4d4b60fc70870a0fb93ef7 Mon Sep 17 00:00:00 2001
+From: Big Brother <root@10.0.2.15>
+Date: Fri, 8 Jan 2016 11:51:57 +0000
+Subject: [PATCH 1/2] proc_sem
+
+---
+ include/Makefile                |    1 +
+ include/minix/callnr.h          |    6 +++-
+ include/proc_sem.h              |   11 +++++++
+ lib/libc/sys-minix/Makefile.inc |    1 +
+ lib/libc/sys-minix/proc_sem.c   |   64 +++++++++++++++++++++++++++++++++++++++
+ servers/pm/Makefile             |    4 +-
+ servers/pm/forkexit.c           |   11 +++++++
+ servers/pm/main.c               |    1 +
+ servers/pm/mproc.h              |    2 +
+ servers/pm/sharedsem.c          |   64 +++++++++++++++++++++++++++++++++++++++
+ servers/pm/sharedsem.h          |   18 +++++++++++
+ servers/pm/table.c              |    3 ++
+ servers/pm/type.h               |    1 +
+ 13 files changed, 184 insertions(+), 3 deletions(-)
+ create mode 100644 include/proc_sem.h
+ create mode 100644 lib/libc/sys-minix/proc_sem.c
+ create mode 100644 servers/pm/sharedsem.c
+ create mode 100644 servers/pm/sharedsem.h
+
+diff --git a/include/Makefile b/include/Makefile
+index b9f00bb..7424a75 100644
+--- a/include/Makefile
++++ b/include/Makefile
+@@ -40,6 +40,7 @@ INCS+=	ieeefp.h
+ .if defined(__MINIX)
+ # MINIX Specific headers.
+ INCS+=  env.h fetch.h lib.h libutil.h timers.h varargs.h 
++INCS+=  proc_sem.h
+ .endif
+ 
+ 
+diff --git a/include/minix/callnr.h b/include/minix/callnr.h
+index 6f145cf..bec3078 100644
+--- a/include/minix/callnr.h
++++ b/include/minix/callnr.h
+@@ -1,4 +1,4 @@
+-#define NCALLS		 114	/* number of system calls allowed */
++#define NCALLS		 117	/* number of system calls allowed */
+ 
+ /* In case it isn't obvious enough: this list is sorted numerically. */
+ #define EXIT		   1 
+@@ -109,6 +109,10 @@
+ 
+ #define PM_GETSID	113	/* PM getsid() */
+ 
++#define PM_SHSEM_MK	114	/* PM make shared semaphore */
++#define PM_SHSEM_P	115	/* PM shared semaphore P oper */
++#define PM_SHSEM_V	116	/* PM shared semaphore V oper */
++
+ #define TASK_REPLY	121	/* to VFS: reply code from drivers, not 
+ 				 * really a standalone call.
+ 				 */
+diff --git a/include/proc_sem.h b/include/proc_sem.h
+new file mode 100644
+index 0000000..fd45b4e
+--- /dev/null
++++ b/include/proc_sem.h
+@@ -0,0 +1,11 @@
++#ifndef _PROC_SEM_H_
++#define _PROC_SEM_H_
++
++#include <stddef.h>
++
++int proc_sem_init(size_t n);
++void proc_sem_post(size_t sem_nr);
++void proc_sem_wait(size_t sem_nr);
++
++#endif
++
+diff --git a/lib/libc/sys-minix/Makefile.inc b/lib/libc/sys-minix/Makefile.inc
+index 6f52097..ffdeef4 100644
+--- a/lib/libc/sys-minix/Makefile.inc
++++ b/lib/libc/sys-minix/Makefile.inc
+@@ -20,5 +20,6 @@ SRCS+= 	accept.c access.c bind.c brk.c sbrk.c m_closefrom.c getsid.c \
+ 
+ # Minix specific syscalls.
+ SRCS+= cprofile.c lseek64.c sprofile.c _mcontext.c
++SRCS+= proc_sem.c
+ 
+ .include "${ARCHDIR}/sys-minix/Makefile.inc"
+diff --git a/lib/libc/sys-minix/proc_sem.c b/lib/libc/sys-minix/proc_sem.c
+new file mode 100644
+index 0000000..1c12cc0
+--- /dev/null
++++ b/lib/libc/sys-minix/proc_sem.c
+@@ -0,0 +1,64 @@
++#define _SYSTEM 1
++#define _MINIX 1
++
++#include <proc_sem.h>
++#include <lib.h>
++#include <minix/rs.h>
++#include <minix/callnr.h>
++#include <sys/types.h>
++#include <sys/ipc.h>
++#include <stdlib.h>
++#include <sys/sem.h>
++
++/*** TODO ***/
++
++static int send_call(int callnr, int param)
++{
++	endpoint_t pm_pt;
++	if (minix_rs_lookup("pm", &pm_pt))
++	    return -1;
++
++	message m;
++	m.m1_i1 = param;
++	return (_syscall(pm_pt, callnr, &m));
++}
++
++int proc_sem_init(size_t n)
++{
++	int res = send_call(PM_SHSEM_MK, n);
++
++	if (res == -1)
++	    return ENOMEM;
++
++	return res;
++}
++
++void proc_sem_wait(size_t sem_nr)
++{
++	int res = send_call(PM_SHSEM_P, sem_nr);
++
++	if (res == -1)
++	    return;
++
++	struct sembuf op;
++	op.sem_num = sem_nr;
++	op.sem_flg = 0;
++	op.sem_op = -1;
++
++	semop(res, &op, 1);
++}
++
++void proc_sem_post(size_t sem_nr)
++{
++	int res = send_call(PM_SHSEM_V, sem_nr);
++
++	if (res == -1)
++	    return;
++
++	struct sembuf op;
++	op.sem_num = sem_nr;
++	op.sem_flg = 0;
++	op.sem_op = 1;
++
++	semop(res, &op, 1);
++}
+diff --git a/servers/pm/Makefile b/servers/pm/Makefile
+index 9065432..4d1aaac 100644
+--- a/servers/pm/Makefile
++++ b/servers/pm/Makefile
+@@ -4,7 +4,7 @@
+ PROG=	pm
+ SRCS=	main.c forkexit.c break.c exec.c time.c alarm.c \
+ 	signal.c utility.c table.c getset.c misc.c \
+-	profile.c schedule.c
++	profile.c schedule.c sharedsem.c
+ 
+ .if ${USE_MCONTEXT} != "no"
+ SRCS+= mcontext.c
+@@ -17,7 +17,7 @@ CPPFLAGS+= -DUSE_TRACE
+ .endif
+ 
+ DPADD+=	${LIBSYS} ${LIBTIMERS}
+-LDADD+=	-lsys -ltimers
++LDADD+=	-lsys -ltimers -lc
+ 
+ MAN=
+ 
+diff --git a/servers/pm/forkexit.c b/servers/pm/forkexit.c
+index 6e01f41..e567926 100644
+--- a/servers/pm/forkexit.c
++++ b/servers/pm/forkexit.c
+@@ -90,6 +90,9 @@ int do_fork()
+ 	rmc->mp_trace_flags = 0;
+ 	(void) sigemptyset(&rmc->mp_sigtrace);
+   }
++  
++  if (rmc->shsem)
++        rmc->shsem->refcount++; /* Update reference counter */
+ 
+   /* Some system servers like to call regular fork, such as RS spawning
+    * recovery scripts; in this case PM will take care of their scheduling
+@@ -188,6 +191,10 @@ int do_srv_fork()
+ 	rmc->mp_trace_flags = 0;
+ 	(void) sigemptyset(&rmc->mp_sigtrace);
+   }
++
++  if (rmc->shsem)
++        rmc->shsem->refcount++; /* Update reference counter */
++
+   /* inherit only these flags */
+   rmc->mp_flags &= (IN_USE|PRIV_PROC|DELAY_CALL);
+   rmc->mp_child_utime = 0;		/* reset administration */
+@@ -286,6 +293,10 @@ int dump_core;			/* flag indicating whether to dump core */
+   /* If the exited process has a timer pending, kill it. */
+   if (rmp->mp_flags & ALARM_ON) set_alarm(rmp, (clock_t) 0);
+ 
++  /* Destroy shared semaphore, if assigned */
++  shsem_free(rmp->shsem);
++  rmp->shsem = NULL;
++
+   /* Do accounting: fetch usage times and accumulate at parent. */
+   if((r=sys_times(proc_nr_e, &user_time, &sys_time, NULL, NULL)) != OK)
+   	panic("exit_proc: sys_times failed: %d", r);
+diff --git a/servers/pm/main.c b/servers/pm/main.c
+index d3c50f2..e393b3d 100644
+--- a/servers/pm/main.c
++++ b/servers/pm/main.c
+@@ -198,6 +198,7 @@ static int sef_cb_init_fresh(int UNUSED(type), sef_init_info_t *UNUSED(info))
+   for (rmp=&mproc[0]; rmp<&mproc[NR_PROCS]; rmp++) {
+ 	init_timer(&rmp->mp_timer);
+ 	rmp->mp_magic = MP_MAGIC;
++	rmp->shsem = NULL; /* By default new process doesn't have semaphore */
+   }
+ 
+   /* Build the set of signals which cause core dumps, and the set of signals
+diff --git a/servers/pm/mproc.h b/servers/pm/mproc.h
+index 80afb4e..e2a6022 100644
+--- a/servers/pm/mproc.h
++++ b/servers/pm/mproc.h
+@@ -69,6 +69,8 @@ EXTERN struct mproc {
+ 
+   char mp_name[PROC_NAME_LEN];	/* process name */
+ 
++  struct sharedsem *shsem;      /* Shared semaphore data */
++
+   int mp_magic;			/* sanity check, MP_MAGIC */
+ } mproc[NR_PROCS];
+ 
+diff --git a/servers/pm/sharedsem.c b/servers/pm/sharedsem.c
+new file mode 100644
+index 0000000..fe6eb97
+--- /dev/null
++++ b/servers/pm/sharedsem.c
+@@ -0,0 +1,64 @@
++/* This file contains implementation of shared semaphores feature 
++ * and it's system calls 
++ */
++
++#include <stdlib.h>
++#include <sys/types.h>
++#include <sys/ipc.h>
++#include <sys/sem.h>
++
++#include "pm.h"
++#include "mproc.h"
++
++void shsem_free(struct sharedsem *p)
++{
++	/* No action to perform */
++	if (!p)
++	    return;
++
++	/* Decreasing reference counter */
++	p->refcount--;
++
++	/* Deleting if necessary */
++	if (p->refcount == 0) {
++		semctl(p->semid, 0, IPC_RMID);
++		free(p);
++	}
++}
++
++int do_shsem_make(void)
++{
++	/* Free previous semaphore set */
++	shsem_free(mp->shsem);
++	mp->shsem = NULL;
++
++	/* Create new set */
++	mp->shsem = malloc(sizeof(struct sharedsem));
++	if (!mp->shsem)
++		return ENOMEM;
++
++	mp->shsem->refcount = 1;
++	mp->shsem->semid = semget(IPC_PRIVATE, m_in.m1_i1 , IPC_CREAT | 0777);
++
++	if (mp->shsem->semid == -1) {
++		free(mp->shsem);
++		mp->shsem = NULL;
++		return ENOMEM;
++	}
++
++	return 0;
++}
++
++int do_shsem_p(void)
++{
++	if (!mp->shsem)
++		return -1;
++
++	return mp->shsem->semid;
++}
++
++int do_shsem_v(void)
++{
++	return do_shsem_p();
++}
++
+diff --git a/servers/pm/sharedsem.h b/servers/pm/sharedsem.h
+new file mode 100644
+index 0000000..7dcf4e6
+--- /dev/null
++++ b/servers/pm/sharedsem.h
+@@ -0,0 +1,18 @@
++#ifndef PM_SHAREDSEM_H
++#define PM_SHAREDSEM_H
++
++#include <sys/types.h>
++#include <sys/ipc.h>
++#include <sys/sem.h>
++
++struct sharedsem {
++	int semid;    /* Semaphore id returned by semget */
++	int refcount; /* Reference counter */
++};
++
++void shsem_free(struct sharedsem *p);
++int do_shsem_make(void);
++int do_shsem_p(void);
++int do_shsem_v(void);
++
++#endif
+diff --git a/servers/pm/table.c b/servers/pm/table.c
+index 5051cec..125cae0 100644
+--- a/servers/pm/table.c
++++ b/servers/pm/table.c
+@@ -125,6 +125,9 @@ int (*call_vec[])(void) = {
+ 	do_srv_kill,	/* 111 = srv_kill */
+  	no_sys, 	/* 112 = gcov_flush */
+ 	do_get,		/* 113 = getsid	*/
++	do_shsem_make,	/* 114 = make_shsem */
++	do_shsem_p,	/* 115 = shsem_p */
++	do_shsem_v	/* 116 = shsem_v */
+ };
+ /* This should not fail with "array size is negative": */
+ extern int dummy[sizeof(call_vec) == NCALLS * sizeof(call_vec[0]) ? 1 : -1];
+diff --git a/servers/pm/type.h b/servers/pm/type.h
+index 28ad553..e91e52e 100644
+--- a/servers/pm/type.h
++++ b/servers/pm/type.h
+@@ -3,3 +3,4 @@
+  * System, which do have some local type definitions.
+  */
+ 
++#include "sharedsem.h"
+-- 
+1.7.7
+
+
+From 9f43bc76b47073e4e58ac035ed5bd6f63e8b960c Mon Sep 17 00:00:00 2001
+From: Big Brother <root@10.0.2.15>
+Date: Sat, 16 Jan 2016 12:02:00 +0000
+Subject: [PATCH 2/2] poprawki
+
+---
+ lib/libc/sys-minix/proc_sem.c |   16 +++++++++++-----
+ servers/ipc/sem.c             |   12 +++++++-----
+ servers/pm/forkexit.c         |    2 ++
+ servers/pm/sharedsem.c        |    6 +++---
+ 4 files changed, 23 insertions(+), 13 deletions(-)
+
+diff --git a/lib/libc/sys-minix/proc_sem.c b/lib/libc/sys-minix/proc_sem.c
+index 1c12cc0..6ec6875 100644
+--- a/lib/libc/sys-minix/proc_sem.c
++++ b/lib/libc/sys-minix/proc_sem.c
+@@ -10,12 +10,11 @@
+ #include <stdlib.h>
+ #include <sys/sem.h>
+ 
+-/*** TODO ***/
+-
+ static int send_call(int callnr, int param)
+ {
+ 	endpoint_t pm_pt;
+-	if (minix_rs_lookup("pm", &pm_pt))
++
++	if (minix_rs_lookup("pm", &pm_pt) != OK)
+ 	    return -1;
+ 
+ 	message m;
+@@ -25,11 +24,18 @@ static int send_call(int callnr, int param)
+ 
+ int proc_sem_init(size_t n)
+ {
+-	int res = send_call(PM_SHSEM_MK, n);
++	int sem = semget(IPC_PRIVATE, n, IPC_CREAT | 0777);
+ 
+-	if (res == -1)
++	if (sem == -1)
+ 	    return ENOMEM;
+ 
++	int res = send_call(PM_SHSEM_MK, sem);
++	
++	if (res == -1) {
++	    semctl(sem, 0, IPC_RMID);
++	    return ENOMEM;
++	}
++	
+ 	return res;
+ }
+ 
+diff --git a/servers/ipc/sem.c b/servers/ipc/sem.c
+index 5b1876a..6b97f12 100644
+--- a/servers/ipc/sem.c
++++ b/servers/ipc/sem.c
+@@ -335,11 +335,13 @@ int do_semctl(message *m)
+ 		sem->semid_ds.sem_ctime = time(NULL);
+ 		break;
+ 	case IPC_RMID:
+-		uid = getnuid(who_e);
+-		if (uid != sem->semid_ds.sem_perm.cuid &&
+-			uid != sem->semid_ds.sem_perm.uid &&
+-			uid != 0)
+-			return EPERM;
++		if ((sem->semid_ds.sem_perm.mode & 0777) != 0777) {
++			uid = getnuid(who_e);
++			if (uid != sem->semid_ds.sem_perm.cuid &&
++				uid != sem->semid_ds.sem_perm.uid &&
++				uid != 0)
++				return EPERM;
++		}
+ 		/* awaken all processes block in semop
+ 		 * and remove the semaphore set.
+ 		 */
+diff --git a/servers/pm/forkexit.c b/servers/pm/forkexit.c
+index e567926..d5c4d87 100644
+--- a/servers/pm/forkexit.c
++++ b/servers/pm/forkexit.c
+@@ -91,6 +91,7 @@ int do_fork()
+ 	(void) sigemptyset(&rmc->mp_sigtrace);
+   }
+   
++  rmc->shsem = rmp->shsem;
+   if (rmc->shsem)
+         rmc->shsem->refcount++; /* Update reference counter */
+ 
+@@ -192,6 +193,7 @@ int do_srv_fork()
+ 	(void) sigemptyset(&rmc->mp_sigtrace);
+   }
+ 
++  rmc->shsem = rmp->shsem;
+   if (rmc->shsem)
+         rmc->shsem->refcount++; /* Update reference counter */
+ 
+diff --git a/servers/pm/sharedsem.c b/servers/pm/sharedsem.c
+index fe6eb97..0760ae3 100644
+--- a/servers/pm/sharedsem.c
++++ b/servers/pm/sharedsem.c
+@@ -18,7 +18,7 @@ void shsem_free(struct sharedsem *p)
+ 
+ 	/* Decreasing reference counter */
+ 	p->refcount--;
+-
++	
+ 	/* Deleting if necessary */
+ 	if (p->refcount == 0) {
+ 		semctl(p->semid, 0, IPC_RMID);
+@@ -38,14 +38,14 @@ int do_shsem_make(void)
+ 		return ENOMEM;
+ 
+ 	mp->shsem->refcount = 1;
+-	mp->shsem->semid = semget(IPC_PRIVATE, m_in.m1_i1 , IPC_CREAT | 0777);
++	mp->shsem->semid = m_in.m1_i1;
+ 
+ 	if (mp->shsem->semid == -1) {
+ 		free(mp->shsem);
+ 		mp->shsem = NULL;
+ 		return ENOMEM;
+ 	}
+-
++	
+ 	return 0;
+ }
+ 
+-- 
+1.7.7
+

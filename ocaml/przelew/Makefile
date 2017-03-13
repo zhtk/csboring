@@ -1,0 +1,2 @@
+build:
+	ocamlbuild przelewankaTest.native
