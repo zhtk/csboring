@@ -26,8 +26,6 @@ for (i in 1:n) {
 		# Wyniki przewidywania
         fit <- c(fit, predict(ir.tr, iris.valid, type="class"))
         valid <- c(valid, iris.valid$Species)
-        
-        i <- i + 1
 }
 
 # Wypisanie macierzy konfuzji
