@@ -2,7 +2,7 @@
 
 * haskell_lib - reimplementing base haskell library with some extensions
 * net_chat - UDP chat server and client
-* net_radio - there are two programs: `player` extract music from icycast protocol, `master` remotely controls player with short UDP messages
+* net_radio - there are two programs: `player` extract music from icecast protocol, `master` receives commands via `telnet` protocol and casts them to `player`s with short UDP messages
 * ocaml
 * octave
 * other - other things, for example C++ BST tree written in functional style
