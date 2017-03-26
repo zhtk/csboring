@@ -1,6 +1,7 @@
 # Table of contents
 
 * haskell_lib - reimplementing base haskell library with some extensions
+* haskell_automata - non deterministic automata implementation in haskell
 * net_chat - UDP chat server and client
 * net_radio - there are two programs: `player` extract music from icecast protocol, `master` receives commands via `telnet` protocol and casts them to `player`s with short UDP messages
 * ocaml
