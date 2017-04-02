@@ -1,0 +1,53 @@
+.class public Javaprog
+.super java/lang/Object
+
+; Konstruktor obiektu
+.method public <init>()V
+   aload_0 ; push this
+   invokespecial java/lang/Object/<init>()V ; call super
+   return
+.end method
+
+; Metoda main
+.method public static main([Ljava/lang/String;)V
+   ; Rozmiar stosu
+   .limit stack 8
+   ; wystarczy mi 1 rejestr ale jestem bogaty to wezmę więcej
+   .limit locals 4
+   
+   ; Umieszczam liczbę nopów do wykonania na stosie
+   ; w tym przypadku 10 000 000 000
+   ldc2_w 10000000000
+   
+   ; Wrzucam licznik pętli do rejestru nr. 0
+   lstore_0
+   ; Tak, ta zmienna została usunięta ze stosu...
+   
+   ; etykietka pętli
+   loop:
+   
+   ; Instrukcja którą testuję
+   nop
+   
+   ; Umieszczam na stosie licznik pętli
+   lload_0
+   ; Wrzucam na stos 1 
+   lconst_1
+   ; i odejmuję od licznika pętli
+   lsub
+   
+   ; i do rejestru. No ale chcę też porównać!
+   lstore_0
+   lload_0
+   
+   ; porównanie licznika pętli
+   lconst_0
+   lcmp
+   
+   ; skok warunkowy
+   ifne loop
+   
+   ; terminate main
+   return
+
+.end method

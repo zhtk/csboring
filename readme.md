@@ -7,6 +7,7 @@ view they might seem uninteresting.
 
 * haskell_automata - non deterministic automata implementation in haskell
 * haskell_lib - reimplementing base haskell library with some extensions
+* java - code written during Object Programming course at the beginning of my studies
 * linux_pipes - simple program using linux pipes to parse and execute RPN
 * linux_threads - multithreaded program simulating game with very complicated rules
 * net_chat - UDP chat server and client
