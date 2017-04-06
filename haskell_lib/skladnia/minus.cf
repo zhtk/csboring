@@ -1,0 +1,3 @@
+ESub. Exp ::= Exp "-" Exp1;
+ENum. Exp1 ::= Integer;
+_. Exp ::= Exp1
