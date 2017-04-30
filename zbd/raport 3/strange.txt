@@ -1,0 +1,46 @@
+SQL> CREATE DIMENSION dimp level subcategory is (promotions.promo_subcategory) level category is (promotions.promo_category) hierarchy dimp_roll (subcategory child of category)
+  2  ;
+CREATE DIMENSION dimp level subcategory is (promotions.promo_subcategory) level category is (promotions.promo_category) hierarchy dimp_roll (subcategory child of category)
+                            *
+ERROR at line 1:
+ORA-30371: column cannot define a level in more than one dimension 
+
+
+SQL> SELECT message FROM REWRITE_TABLE where statement_id = 'Z7';
+QSM-01102: materialized view, COSTS_PROMO_MV, requires join back to table, PROMO
+TIONS, on column, PROMO_CATEGORY                                                
+                                                                                
+QSM-01151: query was rewritten                                                  
+QSM-01110: query rewrite not possible with materialized view COSTS_PROMO_MV beca
+use it contains a join between tables (PROMOTIONS and COSTS) that is not present
+ in the query and that potentially eliminates rows needed by the query          
+                                                                                
+QSM-01033: query rewritten with materialized view, COSTS_PROMO_MV               
+
+SQL> SELECT rewritten_txt FROM REWRITE_TABLE where statement_id = 'Z7';
+SELECT p.promo_category, sum(unit_cost) FROM costs c, promotions p where c.promo
+_id = p.promo_id and c.time_id >= to_date("01-JAN-2000", "DD-MON-YYYY") AND c.ti
+me_id < to_date("01-JAN-2001", "DD-MON-YYYY") GROUP BY promo_category           
+                                                                                
+SELECT from$_subquery$_005.PROMO_CATEGORY PROMO_CATEGORY,SUM(COSTS_PROMO_MV.SUM_
+UNITS) SUM(UNIT_COST) FROM SH.COSTS_PROMO_MV COSTS_PROMO_MV, (SELECT DISTINCT PR
+OMOTIONS.PROMO_SUBCATEGORY PROMO_SUBCATEGORY,PROMOTIONS.PROMO_CATEGORY PROMO_CAT
+EGORY FROM PROMOTIONS PROMOTIONS) from$_subquery$_005 WHERE from$_subquery$_005.
+PROMO_SUBCATEGORY=COSTS_PROMO_MV.PROMO_SUBCATEGORY AND COSTS_PROMO_MV.TIME_ID>=T
+O_DATE("01-JAN-2000","DD-MON-YYYY") AND COSTS_PROMO_MV.TIME_ID<TO_DATE("01-JAN-2
+001","DD-MON-YYYY") GROUP BY from$_subquery$_005.PROMO_CATEGORY                 
+                                                                                
+SELECT DISTINCT PROMOTIONS.PROMO_SUBCATEGORY PROMO_SUBCATEGORY,PROMOTIONS.PROMO_
+CATEGORY PROMO_CATEGORY FROM PROMOTIONS PROMOTIONS GROUP BY PROMOTIONS.PROMO_SUB
+CATEGORY,PROMOTIONS.PROMO_CATEGORY                                              
+                                                                                
+SELECT from$_subquery$_005.PROMO_CATEGORY PROMO_CATEGORY,SUM(COSTS_PROMO_MV.SUM_
+UNITS) SUM(UNIT_COST) FROM SH.COSTS_PROMO_MV COSTS_PROMO_MV, (SELECT DISTINCT PR
+OMOTIONS.PROMO_SUBCATEGORY PROMO_SUBCATEGORY,PROMOTIONS.PROMO_CATEGORY PROMO_CAT
+EGORY FROM PROMOTIONS PROMOTIONS) from$_subquery$_005 WHERE from$_subquery$_005.
+PROMO_SUBCATEGORY=COSTS_PROMO_MV.PROMO_SUBCATEGORY AND COSTS_PROMO_MV.TIME_ID>=T
+O_DATE("01-JAN-2000","DD-MON-YYYY") AND COSTS_PROMO_MV.TIME_ID<TO_DATE("01-JAN-2
+001","DD-MON-YYYY") GROUP BY from$_subquery$_005.PROMO_CATEGORY                 
+                                                                                
+
+SQL> spool off

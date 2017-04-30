@@ -1,0 +1,45 @@
+Hitachi
+
+1B - Test z buforowaniem systemu plików
+ Ustawienia testu: 1000000 odczytow 10000 zapisow 1 blokow na raz
+ Czas testu: 2067758
+1B - Test z bezpośrednim dostępem do dysku
+ Ustawienia testu: 1000 odczytow 10 zapisow 1 blokow na raz
+ Czas testu: 14030002
+WB - Test z buforowaniem systemu plików
+ Ustawienia testu: 1000000 odczytow 10000 zapisow 10 blokow na raz
+ Czas testu: 9950120
+WB - Test z bezpośrednim dostępem do dysku
+ Ustawienia testu: 10000 odczytow 100 zapisow 100 blokow na raz
+ Czas testu: 32317446
+
+Dysk samsung
+
+1B - Test z buforowaniem systemu plików
+ Ustawienia testu: 1000000 odczytow 10000 zapisow 1 blokow na raz
+ Czas testu: 1640246
+1B - Test z bezpośrednim dostępem do dysku
+ Ustawienia testu: 1000 odczytow 10 zapisow 1 blokow na raz
+ Czas testu: 12211941
+WB - Test z buforowaniem systemu plików
+ Ustawienia testu: 1000000 odczytow 10000 zapisow 10 blokow na raz
+ Czas testu: 8978295
+WB - Test z bezpośrednim dostępem do dysku
+ Ustawienia testu: 1000 odczytow 10 zapisow 10 blokow na raz
+ Czas testu: 21664097
+
+Pendrive
+
+1B - Test z buforowaniem systemu plików
+ Ustawienia testu: 1000000 odczytow 10000 zapisow 1 blokow na raz
+ Czas testu: 1650492
+1B - Test z bezpośrednim dostępem do dysku
+ Ustawienia testu: 1000 odczytow 10 zapisow 1 blokow na raz
+ Czas testu: 49592789
+WB - Test z buforowaniem systemu plików
+ Ustawienia testu: 1000000 odczytow 10000 zapisow 10 blokow na raz
+ Czas testu: 9141775
+WB - Test z bezpośrednim dostępem do dysku
+ Ustawienia testu: 1000 odczytow 10 zapisow 10 blokow na raz
+ Czas testu: 35734624
+
