@@ -1,12 +1,17 @@
 library("kohonen")
 
-data = numeric(0)
-for (i in 1:1000) {
-  data[i] = rnorm(2,mean=c(0.1,0.1),sd=c(0.5,0.5))
+# Zadanie 1
+data = rnorm(2,mean=c(0.1,0.1),sd=c(0.5,0.5))
+for (i in 2:1000) {
+  data = rbind(data, rnorm(2,mean=c(0.1,0.1),sd=c(0.5,0.5)))
 }
 
 grid = somgrid(xdim = 1, ydim=1000, topo="rectangular")
-somnet = som(iris.sc, grid=grid, rlen=1000, alpha=c(0.05,0.01))
+somnet = som(data, grid=grid, rlen=1000, alpha=c(0.05,0.01))
+
+x = somnet$codes[[1]][,1]
+y = somnet$codes[[1]][,2]
+plot(x,y,type="l")
 
 # Zadanie 2
 iris.sc = scale(iris[, 1:4])
