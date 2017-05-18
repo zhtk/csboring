@@ -16,6 +16,7 @@ view they might seem uninteresting.
 * octave
 * other - other things, for example C++ BST tree written in functional style
 * postgres - with some addition of PHP using it
+* prolog - simple programs in prolog
 * range tree - ugly implementation of two different kinds of range trees
 * stat_R - code in R, a bit of ML
 * zbd - reports for Advanced Databases course
