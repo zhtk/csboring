@@ -37,7 +37,47 @@ slowo([a | L], S, ps) :- slowo(L, [a | S], ps).
 slowo(S) :- slowo(S, [], ps).
 % wariant (**): dodatkowa linia
 slowo([]).
+% Lepsza wersja:
+% slowo(S, S).
+% slowo([a | S], A) :- slowo(S, [b | A]).
+% slowo(S) :- slowo(S, []).
 
 % slowo(Zdanie, Reszta) == Zdanie = Slowo * Reszta, 
 % Slowo - jw. (np. slowo([a,a,b,b,c,d], [c,d]) - sukces)
+slowo(Z, [], Z, pop).
+slowo([b | Z], [a | S], R, pop) :- slowo(Z, S, R, pop).
+slowo([b | Z], [a | S], R, push) :- slowo([b | Z], [a | S], R, pop).
+slowo([a | Z], S, R, push) :- slowo(Z, [a | S], R, push).
+slowo(Z, R) :- slowo(Z, [], R, push).
 
+% flagaPolska(Lista, Flaga) wtw, gdy Flaga jest posortowaną listą Lista, złożoną ze stałych b,c
+flagaPolska([], [], [], []).
+flagaPolska([], [], [c | C], [c | F]) :- flagaPolska([], [], C, F).
+flagaPolska([], [b | B], C, [b | F]) :- flagaPolska([], B, C, F).
+flagaPolska([c | L], B, C, F) :- flagaPolska(L, B, [c | C], F).
+flagaPolska([b | L], B, C, F) :- flagaPolska(L, [b | B], C, F).
+flagaPolska(L, F) :- flagaPolska(L, [], [], F).
+% ewentualnie jeśli chcemy by liczba liter była równa
+% zmieniamy b, c w akumulatorze na x i po zliczeniu znaków
+% porównujemy długość
+
+% quickSort(L, S) wtw, gdy S jest wynikiem sortowania L (algorytm QuickSort)
+partition([], _, [], []).
+partition([X | L], E, [X | S1], S2) :- X =< E, partition(L, E, S1, S2).
+partition([X | L], E, S1, [X | S2]) :- X > E, partition(L, E, S1, S2).
+partition([E | L], [E | S1], S2) :- partition(L, E, S1, S2).
+
+quickSort([], []).
+quickSort([E | L], S) :-
+  partition(L, E, P1, P2),
+  quickSort(P1, S1),
+  quickSort(P2, S2),
+  append(S1, [E | S2], S).
+
+% flatten(L, F) wtw, gdy L jest zagnieżdżoną listą list,
+% których elementami są liczby całkowite,
+% a F jest spłaszczoną listą L (np. flatten([1,[[[[2,[3]]], 4], 5]], [1,2,3,4,5]) - sukces)
+flatten([], []).
+flatten([ [E | L1] | L2], F) :- flatten([E, L1 | L2], F).
+flatten([[] | L], F) :- flatten(L, F).
+flatten([E | L], [E | F]) :- number(E), flatten(L, F).
