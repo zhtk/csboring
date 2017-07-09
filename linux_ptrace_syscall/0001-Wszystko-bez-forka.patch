@@ -1,0 +1,282 @@
+From a082c97f98a09b1c7d0f2ef0aef2dd6cd26c4719 Mon Sep 17 00:00:00 2001
+From: Piotr Zalas <pz361374@students.mimuw.edu.pl>
+Date: Sat, 10 Jun 2017 11:01:17 +0200
+Subject: [PATCH] Wszystko bez forka
+
+---
+ arch/x86/entry/common.c            | 26 ++++++++++++++++++++++++
+ arch/x86/include/asm/thread_info.h |  2 ++
+ include/linux/sched.h              | 13 ++++++++++++
+ include/linux/tracehook.h          | 18 +++++++++++++++++
+ include/uapi/linux/ptrace.h        |  2 ++
+ kernel/exit.c                      |  3 +++
+ kernel/fork.c                      |  6 +++++-
+ kernel/ptrace.c                    | 41 ++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 110 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/entry/common.c b/arch/x86/entry/common.c
+index bdd9cc5..3baa582 100644
+--- a/arch/x86/entry/common.c
++++ b/arch/x86/entry/common.c
+@@ -131,6 +131,10 @@ static long syscall_trace_enter(struct pt_regs *regs)
+ 	(_TIF_SIGPENDING | _TIF_NOTIFY_RESUME | _TIF_UPROBE |	\
+ 	 _TIF_NEED_RESCHED | _TIF_USER_RETURN_NOTIFY)
+ 
++#ifdef CONFIG_X86_64
++__visible void do_syscall_64(struct pt_regs *regs);
++#endif
++
+ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+ {
+ 	/*
+@@ -141,6 +145,7 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+ 	 * so we need to loop.  Disabling preemption wouldn't help: doing the
+ 	 * work to clear some of the flags can sleep.
+ 	 */
++
+ 	while (true) {
+ 		/* We have work to do. */
+ 		local_irq_enable();
+@@ -151,6 +156,27 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+ 		if (cached_flags & _TIF_UPROBE)
+ 			uprobe_notify_resume(regs);
+ 
++#ifdef CONFIG_X86_64
++		if (cached_flags & _TIF_RUN_SYSCALL) {
++			struct pt_regs sysregs;
++			struct ptrace_run_syscall_args *sd;
++
++			memcpy(&sysregs, regs, sizeof(struct pt_regs));
++			sd = &current->ptrace_run_syscall;
++			sysregs.orig_ax = sd->nr;
++			sysregs.di  = sd->args[0];
++			sysregs.si  = sd->args[1];
++			sysregs.dx  = sd->args[2];
++			sysregs.r10 = sd->args[3];
++			sysregs.r8  = sd->args[4];
++			sysregs.r9  = sd->args[5];
++
++			do_syscall_64(&sysregs);
++			set_tsk_thread_flag(current, TIF_NEED_RESCHED);
++			cached_flags = READ_ONCE(current_thread_info()->flags);
++		}
++#endif
++
+ 		/* deal with pending signal delivery */
+ 		if (cached_flags & _TIF_SIGPENDING)
+ 			do_signal(regs);
+diff --git a/arch/x86/include/asm/thread_info.h b/arch/x86/include/asm/thread_info.h
+index ad6f5eb..483405a 100644
+--- a/arch/x86/include/asm/thread_info.h
++++ b/arch/x86/include/asm/thread_info.h
+@@ -99,6 +99,7 @@ struct thread_info {
+ #define TIF_SYSCALL_TRACEPOINT	28	/* syscall tracepoint instrumentation */
+ #define TIF_ADDR32		29	/* 32-bit address space on 64 bits */
+ #define TIF_X32			30	/* 32-bit native x86-64 binary */
++#define TIF_RUN_SYSCALL		31	/* used to inject syscall */
+ 
+ #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
+ #define _TIF_NOTIFY_RESUME	(1 << TIF_NOTIFY_RESUME)
+@@ -121,6 +122,7 @@ struct thread_info {
+ #define _TIF_SYSCALL_TRACEPOINT	(1 << TIF_SYSCALL_TRACEPOINT)
+ #define _TIF_ADDR32		(1 << TIF_ADDR32)
+ #define _TIF_X32		(1 << TIF_X32)
++#define _TIF_RUN_SYSCALL		(1 << TIF_RUN_SYSCALL)
+ 
+ /*
+  * work to do in syscall_trace_enter().  Also includes TIF_NOHZ for
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 75d9a57..138baa9 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1472,6 +1472,13 @@ struct tlbflush_unmap_batch {
+ 	bool writable;
+ };
+ 
++struct ptrace_run_syscall_args {
++	int nr;
++	uint32_t arch;
++	uint64_t args[6];
++	uint64_t res;
++};
++
+ struct task_struct {
+ #ifdef CONFIG_THREAD_INFO_IN_TASK
+ 	/*
+@@ -1956,6 +1963,12 @@ struct task_struct {
+ 	/* A live task holds one reference. */
+ 	atomic_t stack_refcount;
+ #endif
++
++	/* Structures for ptrace syscall run */
++	unsigned long ptrace_run_syscall_addr;
++	struct completion ptrace_run_syscall_wait;
++	struct ptrace_run_syscall_args ptrace_run_syscall;
++
+ /* CPU-specific state of this task */
+ 	struct thread_struct thread;
+ /*
+diff --git a/include/linux/tracehook.h b/include/linux/tracehook.h
+index 26c1521..b18ed0b 100644
+--- a/include/linux/tracehook.h
++++ b/include/linux/tracehook.h
+@@ -100,6 +100,11 @@ static inline int ptrace_report_syscall(struct pt_regs *regs)
+ static inline __must_check int tracehook_report_syscall_entry(
+ 	struct pt_regs *regs)
+ {
++#ifdef CONFIG_X86_64
++	if (current_thread_info()->flags & _TIF_RUN_SYSCALL)
++		return 0;
++#endif
++
+ 	return ptrace_report_syscall(regs);
+ }
+ 
+@@ -129,6 +134,19 @@ static inline void tracehook_report_syscall_exit(struct pt_regs *regs, int step)
+ 		return;
+ 	}
+ 
++#ifdef CONFIG_X86_64
++	if (current_thread_info()->flags & _TIF_RUN_SYSCALL) {
++		current->ptrace_run_syscall.res = regs->ax;
++		complete(&current->ptrace_run_syscall_wait);
++		clear_thread_flag(TIF_RUN_SYSCALL);
++		clear_thread_flag(TIF_SYSCALL_TRACE);
++		current->state = TASK_TRACED;
++
++		schedule();
++		return;
++	}
++#endif
++
+ 	ptrace_report_syscall(regs);
+ }
+ 
+diff --git a/include/uapi/linux/ptrace.h b/include/uapi/linux/ptrace.h
+index fb81065..8c89052 100644
+--- a/include/uapi/linux/ptrace.h
++++ b/include/uapi/linux/ptrace.h
+@@ -23,6 +23,8 @@
+ 
+ #define PTRACE_SYSCALL		  24
+ 
++#define PTRACE_RUN_SYSCALL	  42
++
+ /* 0x4200-0x4300 are reserved for architecture-independent additions.  */
+ #define PTRACE_SETOPTIONS	0x4200
+ #define PTRACE_GETEVENTMSG	0x4201
+diff --git a/kernel/exit.c b/kernel/exit.c
+index 3076f30..a81865e 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -839,6 +839,9 @@ void __noreturn do_exit(long code)
+ 	sched_autogroup_exit_task(tsk);
+ 	cgroup_exit(tsk);
+ 
++	if (tsk->ptrace_run_syscall_addr)
++		complete(&tsk->ptrace_run_syscall_wait);
++
+ 	/*
+ 	 * FIXME: do that only when needed, using sched_exit tracepoint
+ 	 */
+diff --git a/kernel/fork.c b/kernel/fork.c
+index ba8a015..5843b81 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1701,6 +1701,10 @@ static __latent_entropy struct task_struct *copy_process(
+ 	 */
+ 	user_disable_single_step(p);
+ 	clear_tsk_thread_flag(p, TIF_SYSCALL_TRACE);
++#ifdef CONFIG_X86_64
++	clear_tsk_thread_flag(p, TIF_RUN_SYSCALL);
++#endif
++	p->ptrace_run_syscall_addr = 0;
+ #ifdef TIF_SYSCALL_EMU
+ 	clear_tsk_thread_flag(p, TIF_SYSCALL_EMU);
+ #endif
+@@ -1961,7 +1965,7 @@ long _do_fork(unsigned long clone_flags,
+ 		wake_up_new_task(p);
+ 
+ 		/* forking complete and child started to run, tell ptracer */
+-		if (unlikely(trace))
++		if (unlikely(trace && !current->ptrace_run_syscall_addr))
+ 			ptrace_event_pid(trace, pid);
+ 
+ 		if (clone_flags & CLONE_VFORK) {
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index 49ba7c1..3e75648 100644
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -769,7 +769,11 @@ static int ptrace_resume(struct task_struct *child, long request,
+ {
+ 	bool need_siglock;
+ 
++#ifdef CONFIG_X86_64
++	if (!valid_signal(data) && request != PTRACE_RUN_SYSCALL)
++#else /* CONFIG_X86_64 */
+ 	if (!valid_signal(data))
++#endif /* CONFIG_X86_64 */
+ 		return -EIO;
+ 
+ 	if (request == PTRACE_SYSCALL)
+@@ -777,6 +781,26 @@ static int ptrace_resume(struct task_struct *child, long request,
+ 	else
+ 		clear_tsk_thread_flag(child, TIF_SYSCALL_TRACE);
+ 
++#ifdef CONFIG_X86_64
++	if (request == PTRACE_RUN_SYSCALL) {
++		if (copy_from_user(&child->ptrace_run_syscall, (void *) data,
++				   sizeof(struct ptrace_run_syscall_args)))
++			return -EFAULT;
++
++		if (child->ptrace_run_syscall.arch != AUDIT_ARCH_X86_64)
++			return -EINVAL;
++
++		if (child->ptrace_run_syscall.nr >= NR_syscalls)
++			return 1;
++
++		child->ptrace_run_syscall_addr = data;
++		set_tsk_thread_flag(child, TIF_SYSCALL_TRACE);
++		set_tsk_thread_flag(child, TIF_RUN_SYSCALL);
++		data = 0;
++		init_completion(&child->ptrace_run_syscall_wait);
++	}
++#endif
++
+ #ifdef TIF_SYSCALL_EMU
+ 	if (request == PTRACE_SYSEMU || request == PTRACE_SYSEMU_SINGLESTEP)
+ 		set_tsk_thread_flag(child, TIF_SYSCALL_EMU);
+@@ -817,6 +841,22 @@ static int ptrace_resume(struct task_struct *child, long request,
+ 	if (need_siglock)
+ 		spin_unlock_irq(&child->sighand->siglock);
+ 
++#ifdef CONFIG_X86_64
++	if (request == PTRACE_RUN_SYSCALL) {
++		void *addr = (void *) child->ptrace_run_syscall_addr;
++		wait_for_completion(&child->ptrace_run_syscall_wait);
++
++		if (child->state == TASK_DEAD)
++			return 1;
++
++		child->ptrace_run_syscall_addr = 0;
++		if (copy_to_user(addr,
++				 &child->ptrace_run_syscall,
++				 sizeof(struct ptrace_run_syscall_args)))
++			return -EFAULT;
++	}
++#endif
++
+ 	return 0;
+ }
+ 
+@@ -1048,6 +1088,7 @@ int ptrace_request(struct task_struct *child, long request,
+ #endif
+ 	case PTRACE_SYSCALL:
+ 	case PTRACE_CONT:
++	case PTRACE_RUN_SYSCALL:
+ 		return ptrace_resume(child, request, data);
+ 
+ 	case PTRACE_KILL:
+-- 
+2.13.0
+
