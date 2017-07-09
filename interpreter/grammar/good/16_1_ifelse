@@ -1,0 +1,16 @@
+int main() {
+	bool cond;
+	int x;
+	x = 5;
+	cond = x == (6 - 1);
+	
+	if (cond) {
+		x = 42;
+	};
+	
+	if (cond == false) {
+		cond = false;
+	} else {
+		cond = x > 40;
+	};
+}

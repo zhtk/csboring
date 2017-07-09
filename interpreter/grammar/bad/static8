@@ -1,0 +1,4 @@
+int main(){
+	int<string> d;
+	d[5] = 42;
+}

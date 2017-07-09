@@ -1,0 +1,2 @@
+int f(string s){}
+int main(){ return f("abc", 42); }

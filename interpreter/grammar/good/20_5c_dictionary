@@ -1,0 +1,11 @@
+int fun(int<string> dict){}
+
+int main() {
+	int<string> dict;
+	dict["0"] = 10;
+	dict["xyz"] = dict["0"] + 5;
+	
+	fun(dict);
+	
+	print dict;
+}

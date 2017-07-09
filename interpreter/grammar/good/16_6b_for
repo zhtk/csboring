@@ -1,0 +1,8 @@
+int main() {
+	for i = 1 to 5 {
+		print tostr(i)+"===";
+		for j = i downto 1 {
+			print j;
+		};
+	};
+}

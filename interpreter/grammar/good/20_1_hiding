@@ -1,0 +1,14 @@
+int main() {
+	int x;
+	x = 10;
+	
+	// New block
+	{
+		int x;
+		x = 42;
+	};
+	
+	if (x == 10) {
+		print "OK";
+	};
+}

@@ -1,0 +1,11 @@
+int fun(int[10] tab){}
+
+int main() {
+	int[10] tab;
+	tab[0] = 10;
+	tab[1] = tab[0] + 5;
+	
+	fun(tab);
+	
+	print tab;
+}

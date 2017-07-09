@@ -1,0 +1,14 @@
+int main() {
+	int x;
+	
+	x = 1;
+	x = (x + 1) * 16 / 4 - -2;
+	
+	bool b;
+	b = x > 65 || x < 90 && (true == false);
+	
+	string s;
+	s = "ab" + "c";
+	
+	b = b || s == "abc";
+}

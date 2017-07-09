@@ -1,0 +1,11 @@
+int main() {
+	string s;
+	s = "abc";
+	s = "xyz" + s;
+	
+	s = tostr(123);
+	
+	if (toint(s) == 123 && s == "123") {
+		print "OK";
+	};
+}

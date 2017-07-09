@@ -1,0 +1,22 @@
+int main() {
+	int x;
+	x = 10;
+	print x;
+	
+	int[2] x;
+	x[0] = 10;
+	x[1] = 90;
+	print x;
+	
+	string x;
+	x = "abc";
+	print x;
+	
+	bool x;
+	x = true;
+	print x;
+	
+	int<string> x;
+	x["test"] = 10;
+	print x;
+}

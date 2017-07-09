@@ -1,0 +1,54 @@
+Prog. Program  ::= [Function];
+Fun.  Function ::= Type Ident "(" [Decl] ")" "{" [Inst] "}";
+Decl. Decl     ::= Type Ident;
+
+TInt.  Type ::= "int";
+TBool. Type ::= "bool";
+TStr.  Type ::= "string";
+TTab.  Type ::= Type "[" Integer "]";
+TDict. Type ::= Type "<" Type ">";
+
+EAnd.   Exp  ::= Exp  "&&" Exp1;
+EOr.    Exp  ::= Exp  "||" Exp1;
+EGte.   Exp1 ::= Exp2 ">=" Exp2;
+EGt.    Exp1 ::= Exp2 ">"  Exp2;
+ELte.   Exp1 ::= Exp2 "<=" Exp2;
+ELt.    Exp1 ::= Exp2 "<"  Exp2;
+ENeq.   Exp1 ::= Exp2 "!=" Exp2;
+EEq.    Exp1 ::= Exp2 "==" Exp2;
+EAdd.   Exp2 ::= Exp2 "+"  Exp3;
+ESub.   Exp2 ::= Exp2 "-"  Exp3;
+EMul.   Exp3 ::= Exp3 "*"  Exp4;
+EDiv.   Exp3 ::= Exp3 "/"  Exp4;
+ENeg.   Exp4 ::= "-" Exp5;
+Call.   Exp5 ::= Ident "(" [Exp] ")";
+EVar.   Exp5 ::= Ident;
+EInt.   Exp5 ::= Integer;
+ETab.   Exp5 ::= Ident "[" Exp "]";
+EStr.   Exp5 ::= String;
+ETrue.  Exp5 ::= "true";
+EFalse. Exp5 ::= "false";
+coercions Exp 5;
+
+IVar.   Inst ::= Type Ident;
+ISet.   Inst ::= Ident "=" Exp;
+ITSet.  Inst ::= Ident "[" Exp "]" "=" Exp;
+IIf.    Inst ::= "if" "(" Exp ")" "{" [Inst] "}";
+IIfe.   Inst ::= "if" "(" Exp ")" "{" [Inst] "}" "else" "{" [Inst] "}";
+IWhile. Inst ::= "while" "(" Exp ")" "{" [Inst] "}";
+ICall.  Inst ::= Ident "(" [Exp] ")";
+IPrint. Inst ::= "print" Exp;
+IFort.  Inst ::= "for" Ident "=" Exp "to" Exp "{" [Inst] "}";
+IFord.  Inst ::= "for" Ident "=" Exp "downto" Exp "{" [Inst] "}";
+IBlock. Inst ::= "{" [Inst] "}";
+IRet.   Inst ::= "return" Exp;
+
+comment "//";
+comment "/*" "*/";
+
+terminator Function "";
+terminator Inst ";";
+separator Decl ",";
+separator Exp ",";
+
+entrypoints Program;

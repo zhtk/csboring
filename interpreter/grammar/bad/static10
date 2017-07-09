@@ -1,0 +1,5 @@
+int main(){
+	int main;
+	main = 10;
+	return main();
+}
