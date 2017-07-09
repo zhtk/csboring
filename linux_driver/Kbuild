@@ -1,0 +1,2 @@
+obj-m := monter.o
+monter-objs := main.o register.o context.o
