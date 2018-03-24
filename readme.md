@@ -7,8 +7,10 @@ view they might seem uninteresting.
 
 * haskell_automata - non deterministic automata implementation in haskell
 * haskell_lib - reimplementing base haskell library with some extensions
+* instant - compiler for arithmetic expressions
 * interpreter - interpreter of my own imperative programming language. Implemeted in haskell
 * java - code written during Object Programming course at the beginning of my studies
+* latte - compiler for Java alike language. Don't read the source code, it will rip your eyes out
 * linux_driver - Monter device driver for Linux
 * linux_elf - C library for modifying program image during runtime. It intercept calls to specified functions
 * linux_pipes - simple program using linux pipes to parse and execute RPN
