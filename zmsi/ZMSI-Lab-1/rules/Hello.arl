@@ -1,0 +1,13 @@
+ruleset Hello {
+  
+	variables {
+	} 
+
+	inputs{};
+
+	outputs{};
+
+	void process() using Script {
+		: println("Hello world!");
+	}
+}

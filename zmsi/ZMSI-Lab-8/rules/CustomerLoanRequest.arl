@@ -1,0 +1,151 @@
+ruleset CustomerLoanRequest {
+
+  variables {
+
+    /**
+     * CustomerRelationship is an input variable.
+     *
+     * In this application, customers are ranked on a scale from 0 to
+     * 100, with customers at the higher end of the scale being more
+     * preferred than customers at the lower end of the scale.  How
+     * customers are ranked is outside the scope of this ruleset, but
+     * might take into account length of relationship, payment
+     * history, credit rating, and so on.
+     */
+    Fuzzy CustomerRelationship = new Fuzzy(0, 100) {
+      Sigmoid  Bronze = new Sigmoid(  0, 25,  50, ARL.Down);
+      Pi       Silver = new Pi     ( 50, 50               );
+      Sigmoid  Gold   = new Sigmoid( 50, 75, 100, ARL.Up  );
+    };
+
+    /**
+     * LoanAmount is an input variable.
+     *
+     * In this application, loans can be requested for amounts up to
+     * 100,000.
+     */
+    Fuzzy LoanAmount = new Fuzzy(0, 100000) {
+      Sigmoid  Small  = new Sigmoid(     0, 25000,  50000, ARL.Down);
+      Pi       Medium = new Pi     ( 50000, 50000                  );
+      Sigmoid  Large  = new Sigmoid( 50000, 75000, 100000, ARL.Up  );
+    };
+
+    /**
+     * InterestRate is an output variable.
+     *
+     * In this application, the derived interest rate can be as low as
+     * 4.0% and as high as 6.0%.  Customers at the 'Gold' level
+     * typically receive better interest rates than customers at the
+     * 'Bronze' level.
+     */
+    Fuzzy InterestRate = new Fuzzy(4.0, 6.0) {
+      Sigmoid  Low    = new Sigmoid( 4.0, 4.5, 5.0, ARL.Down);
+      Pi       Average= new Pi     ( 5.0, 1.0               );
+      Sigmoid  High   = new Sigmoid( 5.0, 5.5, 6.0, ARL.Up  );
+    };
+
+ }
+
+  inputs { };
+//inputs { CustomerRelationship, LoanAmount };
+  outputs{ InterestRate };
+
+  /**
+   * =================================================================
+   * This rule block receives control when some other Java program
+   * wants to determine the interest rate for a loan amount requested
+   * by a specific customer.
+   * 
+   * The relevant data, CustomerRelationship and LoanAmount, are
+   * typically passed to the ruleset through the ruleset's input
+   * buffer (see the "inputs" statement above), but are assigned
+   * values here to allow experimentation using ABLE's ruleset
+   * editor.
+   *
+   * Once the data are set, a fuzzy inferencing ruleblock is called to
+   * determine the proper interest rate, which is placed into the
+   * ruleset's output buffer.  It is up to the caller to take any
+   * desired action based on the output.
+   * =================================================================
+   */
+  void process() using Script {
+    : println("Ruleset <" + this.getName() + "> starting process cycle.");
+
+    : CustomerRelationship = 100;
+    : LoanAmount           = 100000;
+
+    : invokeRuleBlock("DetermineInterestRate");
+  }
+
+
+  void postProcess() using Script { 
+    : println("   ...defuzzified interest rate is <" + InterestRate + ">.");
+    : println("Ruleset <" + this.getName() + "> completed process cycle.\n");
+  }
+
+
+  /**
+   * =================================================================
+   * This rule block is called by the "process" ruleblock to determine
+   * the interest rate for a specific customer's requested loan.
+   *
+   * Note that while
+   *   Gold customers typically pay a Low interest rate,
+   *   Silver customers typically pay an Average interest rate, and
+   *   Bronze customers typically pay a High interest rate
+   * all our fuzzy regions purposely overlap so that it is quite
+   * possible, for example, for very low-end Gold customers requesting
+   * nickel-and-dime loans to pay more interest than the very best
+   * Silver customers requesting more profitable loans.
+   *
+   * Note also that we make good use of hedges to push the interest
+   * rate one way or another.  That is, the interest rate can be
+   * nudged a bit lower for our very best Gold customers, and nudged
+   * just a bit higher for our very worst Bronze customers.
+   * =================================================================
+   */
+  void DetermineInterestRate() using Fuzzy {
+    : println("Determining interest rate...");
+
+    /**
+     * Determine the (discounted) interest rate for the best
+     * customers.
+     */
+    goldLarge:
+      if (CustomerRelationship is Gold and LoanAmount is Large ) then
+        InterestRate is extremely extremely Low;
+    goldMedium:
+      if (CustomerRelationship is Gold and LoanAmount is Medium) then
+        InterestRate is slightly somewhat Low;
+    goldSmall:
+      if (CustomerRelationship is Gold and LoanAmount is Small ) then
+        InterestRate is above Low;
+
+    /**
+     * Determine the interest rate for average customers.
+     */
+    silverLarge:
+      if (CustomerRelationship is Silver and LoanAmount is Large ) then
+        InterestRate is slightly below Average;
+    silverMedium:
+      if (CustomerRelationship is Silver and LoanAmount is Medium) then
+        InterestRate is Average;
+    silverSmall:
+      if (CustomerRelationship is Silver and LoanAmount is Small ) then
+        InterestRate is slightly above Average;
+
+    /**
+     * Determine the (premium) interest rate for mediocre customers.
+     */
+    bronzeLarge:
+      if (CustomerRelationship is Bronze and LoanAmount is Large ) then
+        InterestRate is slightly closeTo High;
+    bronzeMedium:
+      if (CustomerRelationship is Bronze and LoanAmount is Medium) then
+        InterestRate is somewhat High;
+    bronzeSmall:
+      if (CustomerRelationship is Bronze and LoanAmount is Small ) then
+        InterestRate is extremely extremely High;
+  }
+
+}

@@ -1,0 +1,143 @@
+ruleset BlocksWorldHTN {
+
+	import java.util.HashMap;	
+	import def.Block;
+	
+	predicates {
+		on,
+		ontable,
+		clear,
+		handempty,
+		holding,
+		Block,
+		stack,
+		unstack,
+		putDown,
+		pickUp
+	}
+ 
+	variables { 
+
+		String planningDomain = "BlocksWorldHTN";
+		String[] planningRequirements = new String[] { ":htn" };
+
+		static HashMap	params = new HashMap();
+
+		Expression planObjects = Block(A) and Block(B) and Block(C) and Block(D);
+
+		Expression initState =	
+			clear(C) and clear(A) and clear(B) and on(B,D) and
+			ontable(C) and ontable(A) and ontable(D) and handempty();
+
+		Expression goalState = on(D,C) and on(C,B) and on(B,A);
+	}
+
+	inputs {}
+	outputs{}
+
+	void init() using Script {
+		: setControlParameter("process", ARL.Domain, planningDomain);
+		: setControlParameter("process", ARL.Requirements, planningRequirements);
+		: setControlParameter("process", ARL.Objects, planObjects);
+		
+		// Set the direction for search
+		// Not needed if we want it to be forward (default)
+		: params.put("direction", "forward");
+
+		// Set it to true to print debug messages from the planner.
+		// Not needed if we want it to be false (default)
+		: params.put("debug","false");
+
+		// Set the limit on number of nodes to expand before giving up.
+		// Default is 10,000 expansions and does not need to be set
+		: params.put("searchLimit", "100000");
+
+		// Set the heuristic type
+		: params.put("heuristicType", "0");
+
+		// Set the direction for search
+		: params.put("heuristicWeight", "5");
+		
+		: setControlParameter("process", ARL.Params, params);
+	}
+
+	void preProcess() { 
+		: setControlParameter("process", ARL.InitialState, initState);
+		: setControlParameter("process", ARL.GoalState, goalState);
+	}
+	
+	void process() using Planning {
+
+		moveViaTable :
+			parameters ( Block X, Block Y, Block Z )
+			precondition (
+				 on(X,Y) and clear(Z)	
+			)
+			effect {
+				on(X,Z);
+			}
+			expansion {
+				unstack(X,Y);
+				putDown(X);
+				pickUp(X);
+				stack(X,Z);
+			}
+
+
+		pickUp :
+			parameters ( Block X )
+			precondition (
+				 handempty() and ontable(X) and clear(X)	
+			)
+			effect {
+				not( handempty() );
+				not( ontable(X) );
+				not( clear(X) );
+				holding(X);
+			}
+
+
+		putDown :
+			parameters ( Block X )
+			precondition (
+					holding(X)	
+			)
+			effect {
+				not( holding(X) );
+				clear(X);
+				handempty();
+				ontable(X);
+			}
+
+
+		stack :
+		 parameters ( Block X, Block Z )
+			precondition (
+				 holding(X) and
+				 clear(Z) 
+			)
+			effect {
+				not( holding(X) );
+				not( clear(Z) );
+				clear(X);
+				handempty();
+				on(X, Z);
+			}
+
+
+		unstack :
+			parameters ( Block X, Block Y )
+			precondition (
+				 clear(X) and
+				 on(X,Y) and handempty()	
+			)
+			effect { 
+				not( on (X,Y) );
+				not( handempty() );
+				not( clear(X) );
+				clear(Y);
+				holding(X);
+			}
+	}
+	
+}

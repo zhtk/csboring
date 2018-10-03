@@ -1,0 +1,196 @@
+ruleset GroceryBagger {
+
+import com.ibm.able.examples.rules.GroceryBag;
+import com.ibm.able.examples.rules.Grocery;
+import com.ibm.able.beans.AbleImportImpl;
+import com.ibm.able.Able;
+import java.util.Collection;
+
+  variables {
+    String  goal = new String("bag_large_items");
+    GroceryBag bag;
+    Integer wmGroceries = 0;
+
+    static AbleImportImpl dataSource = new AbleImportImpl("Groceries", "/home/piotr/zmsi/ZMSI-Lab-6/data/Grocery.dfn");
+    static Grocery  beer = new Grocery("beer", "bottle", "medium", "no");   // Name, container, size, frozen
+    static Grocery  diapers = new Grocery("diapers", "plasticbag", "large", "no");
+    static Grocery  pizza = new Grocery("pizza", "cardboardbox", "large", "yes");
+  }
+
+  inputs{};
+  outputs{wm};
+
+  void init() {
+    I0: GroceryBag.reset();  // sets the first bag id so results can be compared more readily
+    I1: wm.clear();          // get rid of any old bags and groceries
+    I2: invokeRuleBlock("getGroceries");  // populate the groceries to be bagged
+  }
+
+  // This ruleblock is processed before the process() ruleblock.
+  void preProcess() {
+    PP0: wmGroceries = wm.findAllInstances("com.ibm.able.examples.rules.Grocery").size();
+    PP1: wm.assert(goal);       // provide the initial goal
+
+    PP2: println("Running: GroceryBagger.arl.");
+    PP3: println("preProcess: bagging " + wmGroceries + " groceries.");
+    PP4: println("preProcess " + ARL.showWorkingMemory(wm));
+  }
+
+  // Grocery items would be provided by a real application either as
+  // input variables or by asserting to working memory from API calls.
+  // Items are added in this ruleblock to simplify the example.
+  void getGroceries() {
+    // read items to be bagged from file
+    G1: dataSource.init();
+    // construct a Grocery object from each row in the file and add to working memory
+    G2: ARL.assertDataSource(wm,dataSource,"com.ibm.able.examples.rules.Grocery");
+
+    // add other Grocery objects to memory declared in variables section
+    G3: wm.assert(diapers);
+    G4: wm.assert(pizza);
+    // can only add variable 'beer' once;  must add unique objects to working memory
+    G5: wm.assert(beer); 
+    G6: wm.assert(new Grocery("beer", "bottle", "medium", "no"));  // is this enough?
+    G7: wm.assert(new Grocery("beer", "12pack", "large", "no")); // no
+    // this item is also present in the datasource
+    G8: wm.assert(new Grocery("bread", "plasticbag", "medium", "no"));
+
+  }
+
+  void process() using PatternMatchRete {    
+ 
+    Rule_1[4]: // first bag large bottles
+      when( String Goal   ( Goal == "bag_large_items" )  &
+            Grocery Item   ( Item.size == "large" and Item.containerType == "bottle" )  &
+            GroceryBag Bag   ( Bag.hasSpace("large") )  
+          )
+      do  { Bag.addItem(Item);
+            println("Rule_1: Bag number '" + Bag.getId() + "' now contains ['"+Bag.getNumLargeItems()+","+Bag.getNumMediumItems()+","+Bag.getNumSmallItems()+"']. Added "+Item);
+            wm.modify(Bag);
+            wm.retract(Item); 
+          }
+
+    Rule_2[3]: // next priority is any other large items
+      when( String Goal   ( Goal == "bag_large_items" )  &
+            Grocery Item   ( Item.size == "large" )  &
+            GroceryBag Bag   ( Bag.hasSpace("large") )
+          )
+      do  { Bag.addItem(Item);
+            println("Rule_2: Bag number '" + Bag.getId() + "' now contains ['"+Bag.getNumLargeItems()+","+Bag.getNumMediumItems()+","+Bag.getNumSmallItems()+"']. Added "+Item);
+            wm.modify(Bag);
+            wm.retract(Item); 
+          }
+
+    Rule_3: // add a bag if there are large items yet to be bagged
+      when( String Goal   ( Goal == "bag_large_items" ) &
+            Grocery Item   ( Item.size == "large" )
+          )
+      do  { 
+            bag = new GroceryBag();
+            bag.addItem(Item);
+            wm.retract(Item);
+            wm.assert(bag);
+            println("Rule_3: New bag number '" + bag.getId() + "' added to working memory, with Item"+Item);
+          }
+
+    Rule_4[2]:  // ought be no large items left to bag, switch to medium items
+      when( String Goal   ( Goal == "bag_large_items" ) &
+            Grocery Item ! (Item.size == "large" )
+          )
+      do  { wm.retract(Goal);
+            Goal = "bag_medium_items";
+            println("Rule_4: Goal changed to '"+Goal+"'");
+            wm.assert(Goal);
+          }
+
+    Rule_5[4]: // insulate, then put frozen items in a bag by themselves when possible 
+               // (only medium items are frozen in our data)
+      when( String Goal   ( Goal == "bag_medium_items" )  &
+            Grocery Item   ( Item.size == "medium" and Item.frozen )  &
+            GroceryBag Bag   ( Bag.hasSpace("medium") and Bag.numMediumItems > 0 )
+          )
+      do  { Item.insulated = true;
+            Bag.addItem(Item);
+            println("Rule_5: Bag number '" + Bag.getId() + "' now contains ['"+Bag.getNumLargeItems()+","+Bag.getNumMediumItems()+","+Bag.getNumSmallItems()+"']. Added "+Item);
+            wm.modify(Bag);
+            wm.retract(Item); 
+          }
+
+    Rule_6[3]: // bag medium items
+      when( String Goal   ( Goal == "bag_medium_items" )  &
+            Grocery Item   ( Item.size == "medium" )  &
+            GroceryBag Bag   ( Bag.hasSpace("medium") )
+          )
+      do  { Bag.addItem(Item);
+            println("Rule_6: Bag number '" + Bag.getId() + "' now contains ['"+Bag.getNumLargeItems()+","+Bag.getNumMediumItems()+","+Bag.getNumSmallItems()+"']. Added "+Item);
+            wm.modify(Bag);
+            wm.retract(Item); 
+          }
+
+
+    Rule_7: // need a bag, still have medium items to be bagged
+      when( String Goal   ( Goal == "bag_medium_items" ) &
+            Grocery Item (Item.size == "medium" )
+          )
+      do  { 
+            bag = new GroceryBag();
+            bag.addItem(Item);
+            wm.retract(Item);
+            wm.assert(bag);
+            println("Rule_7: New bag number '" + bag.getId() + "' added to working memory, with Item"+Item);
+          }
+
+    Rule_8[2]: // ought be no medium items left to bag, switch to small items
+      when( String Goal   ( Goal == "bag_medium_items" )
+            Grocery Item ! (Item.size == "medium" )
+          )
+      do  { wm.retract(Goal);
+            Goal = "bag_small_items";
+            println("Rule_8: Goal changed to '"+Goal+"'");
+            wm.assert(Goal);
+          }
+    
+    Rule_9[4]:  // bag small items in any bag that's not full
+      when( String Goal   ( Goal == "bag_small_items" )  &
+            Grocery Item   ( Item.size == "small" )  &
+            GroceryBag Bag   ( Bag.hasSpace("small") )
+          )
+      do  { Bag.addItem(Item);
+            println("Rule_9: Bag number '" + Bag.getId() + "' now contains ['"+Bag.getNumLargeItems()+","+Bag.getNumMediumItems()+","+Bag.getNumSmallItems()+"']. Added "+Item);
+            wm.modify(Bag);
+            wm.retract(Item); 
+          }
+
+    Rule_11:  // add a bag for remaining small items
+      when( String Goal   ( Goal == "bag_small_items" ) &
+            Grocery Item ( Item.size == "small" )
+          )
+      do  { 
+            bag = new GroceryBag();
+            bag.addItem(Item);
+            wm.retract(Item);
+            wm.assert(bag);
+            println("Rule_11: New bag number '" + bag.getId() + "' added to working memory, with Item"+Item);
+          }
+
+    Rule_12[2]:  // no items left to bag, remove the goal
+      when( 
+            String Goal   ( Goal == "bag_small_items" ) &
+            Grocery Item ! ( )
+          )
+      do  { wm.retract(Goal);  
+            println("Rule_12: Goal " + Goal + " removed.");
+          }
+  }
+
+  // The postProcess ruleblock is processed after the main ruleblock completes.
+  // This is a good place for cleanup items such as turning trace and debug off.
+  void postProcess() {
+    P1: println("postProcess " + ARL.showWorkingMemory(wm));
+    // if the following two rules are commented out, items are reported to be unbagged
+    P2: println("Bags used: " + wm.findAllInstances("com.ibm.able.examples.rules.GroceryBag").size());
+    P3: println("Items unbagged: " + wm.findAllInstances("com.ibm.able.examples.rules.Grocery").size() + " of " + wmGroceries);
+    
+  }
+
+}

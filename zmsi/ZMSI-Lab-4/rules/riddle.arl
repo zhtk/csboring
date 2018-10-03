@@ -1,0 +1,54 @@
+ruleset RiddleRule {
+  library riddles.RiddleUtils; 
+
+  variables {
+    String question;
+    String result;
+    Boolean gotColor = false;
+    Boolean isMachine = false;
+    Boolean isSmall = false;
+    Boolean isBig = false;
+  }
+
+  inputs{question};  // Optional
+  outputs{result}; // Optional
+
+  void process() using Forward {
+    : if (isBlankOrNull(question))
+      result = "I don't know!";
+    : if (extractVerb(question) == "move")
+      isMachine = true;
+    : if (extractVerb(question) == "shine")
+      isMachine = true;
+    : if (extractVerb(question) == "fly")
+      isMachine = true;
+    : if (extractSize(question) == "small")
+      isSmall = true;
+    : if (extractSize(question) == "little")
+      isSmall = true;
+    : if (extractSize(question) == "medium")
+      isSmall = true;
+    : if (extractSize(question) == "large")
+      isBig = true;
+    : if (extractSize(question) == "huge")
+      isBig = true;
+    : if (isMachine and extractLocation(question) == "air")
+      result = "This is plane!";
+    : if (isMachine and isBig and extractLocation(question) == "house")
+      result = "This is car!";
+    : if (isMachine and isSmall and extractLocation(question) == "house")
+      result = "This is a toy!";
+    : if (isMachine and isSmall and extractLocation(question) == "water")
+      result = "This is a sea and air drone!";
+    : if (isMachine and isBig and extractLocation(question) == "water")
+      result = "This is ship with helicopter on it!";
+    : if (extractVerb(question) == "swim" and extractLocation(question) == "water")
+      result = "This is fish!";
+    : if (extractVerb(question) == "run" and extractLocation(question) == "room")
+      result = "This is child!";
+    : if (isMachine and extractLocation(question) == "room")
+      result = "This is televisor!";
+    : if (extractVerb(question) == "swim" and extractLocation(question) == "room")
+      result = "This is someone taking a bath!";
+  }
+}

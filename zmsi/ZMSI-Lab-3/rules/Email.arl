@@ -1,0 +1,34 @@
+ruleset Email {
+  import email.Email;
+  library email.EmailUtils;
+  // define the variables we'll be using
+	variables {
+		String result;
+		Email mail;
+		static Integer counter;
+	} 
+
+	// inputs we get from the calling program
+	inputs{mail};
+
+	// outputs we return to the calling program
+	outputs{result};
+
+	// main processing logic
+	void process() using Forward {
+		: counter++;
+		[2]: if (isUnknownSender(mail))
+			result = "SPAM";
+		[2]: if (!nonEmptyTitle(mail))
+			result = "SPAM";
+		[1]: if (isSpammer(mail))
+			result = "super-SPAM";
+		[1]: if (isAnDealOffer(mail) && isUnknownSender(mail))
+			result = "super-SPAM";
+	}
+
+	// anything we want to do after the main processing
+	void postProcess() {
+		: println("Ruleset concludes the email is a " + result + " email. Counter: " + counter);
+	}
+}

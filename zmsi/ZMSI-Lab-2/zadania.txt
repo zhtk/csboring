@@ -1,0 +1,5 @@
+﻿1. Analyze the code of the class SpamDetectionApp and run it.
+2. Add your own rules to the file Email.arl and try using a larger amout of input data.
+3. Try using your own classes in the ruleset: create your won class Email represengin an e-mail message and an auxiliary class EmailUtils, which allows for a verification of different parameters of messages, for instance a non-empty title, known sender etc. Please use your own classes in the definitions of the rules.
+4. Add a type "super-SPAM" (np. for instance when the content includes a specific word). If a message is both a SPAM and a super-SPAM, it should be highlighted as a super-SPAM. Warning, the engine Script does not take into account rule priorities. If we want to use rule prioirities, we should use a different engine, say Forward.
+5. Add a counter that increments each time function process is called (like in Javie, variables can be static).

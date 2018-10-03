@@ -1,0 +1,22 @@
+1. Familiarize yourself with the engine Planning by analyzing files
+rules/BlocksWorld.arl and rules/BlocksWorldHTN.arl.
+   In particular, observe that the plan in the first file is executed automatically, 
+   and observe that a rule in the second file is described as a composition using the 
+   section expanssion.
+
+2. Using the engine Planning solve the classic problem Monkey and Bananas:
+
+A monkey is in a room at a location A, containing a box at a location B and a bunch of bananas 
+at a location C.
+The bananas are hanging from the ceiling out of reach of the monkey.
+What sequence of actions will allow the monkey to get the bananas?
+(The monkey is supposed to go to the box, push it under the bananas, climb on top of it and 
+grasp the bananas.)
+The monkey knows how to: move around, carry other things, climb things, reach to banana.
+
+3. The first programs in STRIPS were supposed to control the robot Shakey.
+   Shakey is able to lift and to drop boxes, to climb the boxes and to jump down from them,
+   to move from one location to another, and to turn on/off the light (however, in order
+   to reach the switch, it needed to stand on a box). Using the engine Planning describe 
+   the world depicted in the attached picture (shakey.png) and generate a plan, which allows 
+   the robot to turn on the light in all the rooms.

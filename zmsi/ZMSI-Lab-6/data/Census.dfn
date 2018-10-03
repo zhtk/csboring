@@ -1,0 +1,15 @@
+age continuous input
+workclass categorical input
+fnlwgt continuous input
+education categorical input
+education_num continuous input
+marital_status categorical input
+occupation categorical input
+relationship categorical input
+race categorical input
+sex categorical input
+capital_gain continuous input
+capital_loss continuous input
+hours_per_week continuous input
+native_country categorical input
+income categorical input

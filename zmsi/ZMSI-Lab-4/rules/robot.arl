@@ -1,0 +1,36 @@
+ruleset Robot {
+  library com.ibm.able.rules.AbleGUILib;
+
+  variables {
+    Categorical color = new Categorical(new String[]{"red", "green", "blue"});
+    Categorical shape = new Categorical(new String[]{"cube", "triangle", "oval"});
+    Categorical weight = new Categorical(new String[]{"light", "heavy"});
+    Boolean radioactive;
+    Boolean eat;
+  }
+
+  inputs{color, shape, weight, radioactive};
+  outputs{eat};
+
+  void process() using DecisionTree {  
+    R1: if (color == "red" and !radioactive)
+      eat = true;
+    R2: if (color == "red" and radioactive)
+      eat = false;
+    R3: if (color == "green" and weight == "heavy")
+      eat = true;
+    R4: if (color == "green" and weight == "light")
+      eat = false;
+    R5: if (color == "blue" and weight == "light" and !radioactive)
+      eat = true;
+    R6: if (color == "blue" and (weight == "heavy" or radioactive))
+      eat = false;
+  }
+  
+  void postProcess(){
+		: if (eat)
+			println("Robot can eat this thing");
+		else
+			println("Robot can't eat this thing");
+	}
+}

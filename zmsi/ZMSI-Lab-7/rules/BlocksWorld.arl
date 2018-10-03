@@ -1,0 +1,141 @@
+ruleset BlocksWorld {
+
+	import java.util.ArrayList;
+	import java.util.HashMap;
+	
+	import def.Block;
+	import def.BlocksExecutor;
+ 
+	predicates {
+		on,
+		ontable,
+		clear,
+		handempty,
+		holding,
+		Block
+	}
+
+	variables { 
+		String planningDomain = "BlocksWorld";
+		String[] planningRequirements = new String[] { ":strips" };
+   		ArrayList thePlan;
+		Boolean returnCode;
+
+		static HashMap params = new HashMap();
+
+		Expression planObjects = Block(A) and Block(B) and Block(C) and Block(D);
+		
+		Expression initState =	
+			clear(C) and clear(A) and clear(B) and clear(D) and
+			ontable(C) and ontable(A) and ontable(B) and ontable(D) and handempty();
+
+		Expression goalState = on(D,C) and on(C,B) and on(B,A);
+	}
+	
+	inputs {}
+	outputs{}
+
+	void init() using Script {
+		: setControlParameter("process", ARL.Domain, planningDomain);
+		: setControlParameter("process", ARL.Requirements, planningRequirements);
+		: setControlParameter("process", ARL.Objects, planObjects);
+    	: setControlParameter("process", ARL.DomainActionsClass, BlocksExecutor);
+
+		// Set it to true to print debug messages from the planner.
+		// Not needed if we want it to be false (default)
+		: params.put("debug", "false");
+
+		// Set the limit on number of nodes to expand before giving up.
+		// Default is 10,000 expansions and does not need to be set
+		: params.put("searchLimit", "100000");
+
+		// Search direction, heuristic function and heuristic weight can 
+		// be used to customize the performance of the planner. 
+		// Use defaults whenever in doubt.
+
+		// Set the direction for search
+		// The parameter is not needed if we want it to be forward (default)
+		: params.put("direction", "backward");
+
+		// Set the type of heuristic function to use. Possible supported 
+		// choices are 0-6. See the Able Rule Language guide for definitions.
+		: params.put("heuristicType", "0");
+
+		// Set the weightage for heuristic 'h' in (f = g + w * h).
+		: params.put("heuristicWeight", "5");
+
+		: setControlParameter("process", ARL.Params, params);
+	}
+
+	void preProcess() { 
+		: setControlParameter("process", ARL.InitialState, initState);
+		: setControlParameter("process", ARL.GoalState, goalState);
+	 }
+	 
+	void process() using Planning {
+
+		pickUp :
+			parameters ( Block X )
+			precondition (
+				 handempty() and ontable(X) and clear(X)	
+			)
+			effect {
+				not( handempty() );
+				not( ontable(X) );
+				not( clear(X) );
+				holding(X);
+			}
+
+
+		putDown :
+			parameters ( Block X )
+			precondition (
+					holding(X)	
+			)
+			effect {
+				not( holding(X) );
+				clear(X);
+				handempty();
+				ontable(X);
+			}
+
+
+		stack :
+		 parameters ( Block X, Block Y )
+			precondition (
+				 holding(X) and
+				 clear(Y) 
+			)
+			effect {
+				not( holding(X) );
+				not( clear(Y) );
+				clear(X);
+				handempty();
+				on(X, Y);
+			}
+
+
+		unstack :
+			parameters ( Block X, Block Y )
+			precondition (
+				 clear(X) and
+				 on(X,Y) and handempty()	
+			)
+			effect {
+				not( on (X,Y) );
+				not( handempty() );
+				not( clear(X) );
+				clear(Y);
+				holding(X);
+			}
+	}
+
+	void postProcess() {
+		: thePlan = this.getControlParameter("process", ARL.Plan);
+		: returnCode = this.processPlan(thePlan);
+		: if (returnCode) then
+			println("Plan processed successfully.");
+		else
+			println("Plan processing encountered an error.");
+	}
+}

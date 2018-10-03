@@ -1,0 +1,12 @@
+﻿1. Analyze how the engine Predicate works based on the example in the file rules/MurderMystery.arl.
+
+2. Using the engine Predicate:
+	a) using predicates parent, male, female create a database about the British
+	royal family (e.g., based on http://www.britroyals.com/images/royal_family.jpg),
+	b) write predicates mother, father, uncle, sibling, ancestor, descendant,
+	c) create an agent, that takes a name of a person and returns the list of all male descendants.
+	
+3. Using the Predicate engine solve the eight queens puzzle (putting eight queens on
+the chessboard so that they do not attack each other: https://en.wikipedia.org/wiki/Eight_queens_puzzle)
+
+4. Familiarize yourself with the engine Policy by analyzing the file PolicyExample.arl.

@@ -1,0 +1,14 @@
+Fuzzy logic
+
+1. Please familiarize yourself with the examples of the usage of the Fuzzy engine in files CustomerLoanRequest.arl and Trout.arl.
+   (Additional information: http://en.wikipedia.org/wiki/Fuzzy_control_system)
+
+2. Implement an agent module (autonomous car) responsible for distinguishing traffic lights.
+   You can use class StreetlightFrame.
+
+3. Implement a module for recognizing weather. The output should have one of the following four values: normal, dry, windy or rain. The weather is recognized based on:
+ - the amount of rainfall in millimetres,
+ - cloudiness,
+ - temperature,
+ - wind power,
+ - type of fall: snow, rain, hail.

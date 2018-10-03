@@ -1,0 +1,53 @@
+ruleset Chess {
+	library com.ibm.able.rules.AblePredicateLib;
+
+	predicates {
+		queen,
+		number,
+		noconflict,
+		solution
+	};
+
+	variables {
+  		Object result;
+  	}
+
+	inputs{};
+	outputs{result};
+
+	void init() {
+		: setControlParameter(ARL.process, ARL.Goal,
+		    solution([queen(1, Y1), queen(2, Y2), queen(3, Y3), queen(4, Y4),
+		              queen(5, Y5), queen(6, Y6), queen(7, Y7), queen(8, Y8)])) ;
+	}
+
+	void postProcess(){
+		: result = getSolution(this, "process", 0);
+		: println(result);
+	}
+
+	void process() using Predicate {
+		: number(1).
+		: number(2).
+		: number(3).
+		: number(4).
+		: number(5).
+		: number(6).
+		: number(7).
+		: number(8).
+		
+		: solution([]).
+		: solution([queen(X, Y) | Rest]) :- solution(Rest),
+		    number(X),
+		    number(Y),
+		    noconflict(queen(X, Y), Rest).
+		
+		: noconflict(queen(X, Y), []).
+		: noconflict(queen(X, Y), [queen(A, B) | R]) :-
+		    noconflict(queen(X, Y), R),
+		    X != A,
+		    Y != B,
+		    X - A != Y - B,
+		    X - A != B - Y.
+	}
+}

@@ -1,0 +1,41 @@
+﻿Lab5: Engines PatternMatch and PatternMatchRete.
+
+1) Familiarize yourself with the examples of using selectors and the engine PatternMatch in files SelectorDemo.arl and GroceryBagger.arl. 
+
+2) We will be working on the publicly available dataset Census Income ( http://archive.ics.uci.edu/ml/datasets/Adult ).
+Data can be found in the file Census.dat; in the file Census.dfn we can find their definition. The file Census.arl contains the example goal and rule answering the first question below.
+Note: we can add (remove and modify) to wm (WorkingMemory) objects of different classes. You should remember of importing and adding these classes to the path.
+
+Using the class Selector answer the following questions:
+1. What is the number of people with the Polish nationality?
+2. What percentage of male people are divorced?
+3. What is is the largest ethnical group among the Adm-clericals?
+4. Do all Asian people having children earn less than 50 000?
+5. What is the distribution of the gender for each race?
+6. What education-num corresponds to particular education levels? 
+7. What kind of education is related to the highest salaries?
+8. What occupation comes with the highest hours-per-week? 
+9. What is the average hours-per-week for the oldest group of people, and what is for the youngest?
+10. Who gained most and who lost most on investing?
+11. What is the most common profession per country?
+
+
+Below are allowed values of the attributes:
+
+age: continuous.
+workclass: Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+fnlwgt: continuous.
+education: Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+education-num: continuous.
+marital-status: Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+sex: Female, Male.
+capital-gain: continuous.
+capital-loss: continuous.
+hours-per-week: continuous.
+native-country: United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
+income:  <=50K, >50K
+
+Note: unknown values are marked as "?".

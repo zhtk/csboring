@@ -1,0 +1,167 @@
+ruleset Census {
+
+import com.ibm.able.beans.AbleImportImpl;
+import com.ibm.able.Able;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import census.Person;
+library census.PersonUtils;
+
+  variables {
+    String  goal1 = new String("count_Poles");
+    String  goal2 = new String("percent_divorcees");
+    String  goal3 = new String("ethnic_clerks");
+    String  goal4 = new String("rich_kids_asians");
+    String  goal5 = new String("races_sex");
+    String  goal6 = new String("education_num_to_level");
+    String  goal7 = new String("education_income");
+    String  goal8 = new String("longest_hours");
+    String  goal9 = new String("hours_age");
+    String  goal10 = new String("investments");
+    String  goal11 = new String("country_occupation");
+    
+    
+    Integer wmDataSize = 0;
+    Integer result;
+    String prefix = "/home/piotr/zmsi/ZMSI-Lab-6/data/";
+    static AbleImportImpl dataSource = new AbleImportImpl("Person", prefix+"Census.dfn");
+    
+    Person person = new Person();
+    Expression expr;  
+    Selector selector;
+    Integer i;
+    Integer x;
+    Integer y;
+    Double d1;
+    Double d2;
+    String s;
+    
+    String[] races = new String[]{"White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"};
+ 
+  }
+
+  inputs{};
+  outputs{wm};
+
+  void init() {
+    : invokeRuleBlock("getData");  // populate the data 
+  }
+
+  void getData() {
+    // read data from file
+    G1: dataSource.init();
+    // construct a Person object from each row in the file and add to working memory
+    G2: ARL.assertDataSource(wm,dataSource,"census.Person");
+  }
+  
+  void preProcess() {
+    PP0: wmDataSize = wm.findAllInstances("census.Person").size();
+    PP1: wm.assert(goal1); // provide the initial goal
+    PP2: println("Running: "+ prefix+ "Census.arl.");
+    PP3: println("preProcess: Dataset size: " + wmDataSize + ".");
+  }
+
+  void process() using PatternMatchRete {
+    Rule_1:
+      when( String Goal   ( Goal == "count_Poles" ) )
+      do  {       
+    		expr = new Expression(this, "person.native_country == \"Poland\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true) ;
+      		result = wm.findAll( selector ).size() ; 
+            println("Rule_1: Goal '" + Goal + "'. Result = " + result);
+            wm.assert(goal2);
+          }
+    Rule_2:
+      when( String Goal   ( Goal ==  "percent_divorcees") )
+      do  {
+      		expr = new Expression(this, "person.marital_status == \"Divorced\" AND person.sex == \"Male\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+      		result = wm.findAll(selector).size() * 100;
+      		expr = new Expression(this, "person.sex == \"Male\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+    		result = result / wm.findAll(selector).size();
+        	println("Rule_2: Goal '" + Goal + "'. Result = " + result);
+        	wm.assert(goal3);
+          }
+    Rule_3:
+      when( String Goal   ( Goal ==  "ethnic_clerks") )
+      do  {
+      		expr = new Expression(this, "person.occupation == \"Adm-clerical\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+        	println("Rule_3: Goal '" + Goal + "'. Result = " + aggregateByRaceMax(wm.findAll(selector).toArray()));
+        	wm.assert(goal4);
+          }
+    Rule_4:
+      when( String Goal   ( Goal ==  "rich_kids_asians") )
+      do  {
+      		expr = new Expression(this, "person.relationship == \"Own-child\" AND person.income == \"<=50K\" AND person.race == \"Asian-Pac-Islander\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+      		result = wm.findAll(selector).size();
+      		if (result == 0)
+            	println("Rule_4: Goal '" + Goal + "'. Result = YES");
+            else
+            	println("Rule_4: Goal '" + Goal + "'. Result = NO");
+            wm.assert(goal5);
+          }
+    Rule_5:
+      when( String Goal   ( Goal ==  "races_sex") )
+      do  {
+      		expr = new Expression(this, "person.sex == \"Male\" OR person.sex == \"Female\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+            println("Rule_5: Goal '" + Goal + "'. Result = " + aggregateByRaceSex(wm.findAll(selector).toArray()));
+            wm.assert(goal6);
+          }
+    Rule_6:
+      when( String Goal   ( Goal ==  "education_num_to_level") )
+      do  {
+      		expr = new Expression(this, "person.income == \">50K\" OR person.income == \"<=50K\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+            println("Rule_6: Goal '" + Goal + "'. Result = " + educationNum(wm.findAll(selector).toArray()));
+            wm.assert(goal7);
+          }
+    Rule_7:
+      when( String Goal   ( Goal ==  "education_income") )
+      do  { 
+      		expr = new Expression(this, "person.income == \">50K\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+            println("Rule_7: Goal '" + Goal + "'. Result = " + getEduMax(wm.findAll(selector).toArray()));
+            wm.assert(goal8);
+          }
+    Rule_8:
+      when( String Goal   ( Goal ==  "longest_hours") )
+      do  {
+      		expr = new Expression(this, "person.income == \">50K\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+            println("Rule_8: Goal '" + Goal + "'. Result = " + hoursPerWeek(wm.findAll(selector).toArray()));
+            wm.assert(goal9);
+          }
+    Rule_9:
+      when( String Goal   ( Goal ==  "hours_age") )
+      do  {
+      		expr = new Expression(this, "person.age >= 70");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+    		result = hpwAvg(wm.findAll(selector).toArray());
+    		expr = new Expression(this, "person.age <= 20");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+            println("Rule_9: Goal '" + Goal + "'. Result = 70+ -> " + result + ", 20- -> " + hpwAvg(wm.findAll(selector).toArray()));
+            wm.assert(goal10);
+          }
+    Rule_10:
+      when( String Goal   ( Goal ==  "investments") )
+      do  {
+      		expr = new Expression(this, "person.income == \">50K\" OR person.income == \"<=50K\"");  
+    		selector = new Selector(this.getVariable("person"), expr, true);
+            println("Rule_10: Goal '" + Goal + "'. Result = ");
+            println("  biggest loss -> " + lostMost(wm.findAll(selector).toArray()));
+            println("  biggest gain -> " + gainMost(wm.findAll(selector).toArray()));
+            wm.assert(goal11);
+          }
+    Rule_11:
+      when( String Goal   ( Goal ==  "country_occupation") )
+      do  {
+            println("Rule_11: Goal '" + Goal + "'. Result = " + countriesJob(this, wm));
+          }
+  }
+}

@@ -1,0 +1,12 @@
+1. Familiarize yourself with the applications in packages buffer, property and event, 
+presenting different types of communication in ABLE. Classes *App contain methods main which can be 
+used to run the program.
+2. Implementation of the Collatz conjecture. Using the communication through Events,
+ create a group of agents connected in a ring. Your program should pass a natural 
+ number (a constant or a number read from the standard input) to the ring. Each agent 
+ after receiving the number x should perform the following operation: 
+ if x%2=0 then x/=2 else x=3x+1, and next it should pass the number to the next agent
+ (unless x == 1) or to pass to the main program information on how many steps have been performed 
+ (if x == 1). The program should print to the standard output the number of steps and terminate.
+3. Using one of the sets of rules created on the previous classes, create an app using 
+the agent implementing AbleRuleAgentImpl.

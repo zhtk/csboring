@@ -1,0 +1,345 @@
+/**
+*  The trout ruleset takes characteristics describing gamefish common 
+*  to Wyoming and determines the species.  There is a companion
+*  data set for providing input with data buffers.
+*/
+
+ruleset Trout {
+
+  variables {
+    // Fuzzy variables
+    Fuzzy AnalFinRayCount = new Fuzzy(1, 20)  {
+      Segments  SalmonRange = new Segments (11.9,0,  12,1,  15,1,  15.1,0);
+      Segments  TroutRange  = new Segments ( 8.9,0,   9,1,  11,1,  11.1,0);
+    };
+
+    Fuzzy BlackSpotsOnHead = new Fuzzy(0, 50)  {
+      Trapezoid Few  = new Trapezoid( 3,  5, 10, 12);
+      Linear    None = new Linear   (0,  5, ARL.Down);
+      Segments  Some = new Segments ( 8,0,  10,1,  15,1,  25,0);
+      Shoulder  Many = new Shoulder (13, 20, ARL.Right);
+    };
+
+    Fuzzy BlackSpotsOnTail = new Fuzzy(0, 50)  {
+      Trapezoid Few  = new Trapezoid(3, 5, 10, 12);
+      Linear    None = new Linear   (0, 5, ARL.Down);
+      Segments  Some = new Segments (8,0,  10,1,  15,1,  25,0);
+      Sigmoid   Many = new Sigmoid  (8, 13, 20, ARL.Up);
+    };
+
+    Fuzzy BlackSpotDistribution = new Fuzzy(0, 100)  {
+      Shoulder  TwiceHead = new Shoulder (1.5, 1.75, ARL.Right);
+      Shoulder  QuadTail  = new Shoulder (0,   0.5,  ARL.Left);
+      Trapezoid Same      = new Trapezoid(0.4, 0.6, 1.9, 2.1);
+      Linear    TwiceTail = new Linear   (0,   0.75, ARL.Down);
+    };
+
+    // Boolean variables
+    Boolean MoreSpotsOnHead = new Boolean(false);
+
+    // Double variables
+    Double HeadToTailSpotRatio = new Double(-1.0);
+
+    // Categorical variables
+    Categorical AdiposeFin = new Categorical(new String[] {"no", "yes"});         // all Salmonidae are yes
+    Categorical RedOrangeJawSlash = new Categorical(new String[] {"no", "yes"});  // cutthroat trout is yes
+    Categorical ForkedTail = new Categorical(new String[] {"no", "yes"});         // lake trout, salmon yes; 'other' may be
+    Categorical ScaleSize = new Categorical(new String[] {"large", "medium", "small"});
+    Categorical DorsalFinSize = new Categorical(new String[] {"large", "small"});
+    Categorical WhiteOnPelvicFin = new Categorical(new String[] {"no", "tip", "edge"});
+
+    Categorical FishName = new Categorical(new String[] {"Cutthroat", "Rainbow", "Golden", "Brook", "Brown", "Lake", "Kokanee", "MountainWhiteFish", "Grayling"});
+    Categorical FishType = new Categorical(new String[] {"Trout", "Salmon", "OtherFish"});
+
+  }
+
+  outputs {FishName, FishType, HeadToTailSpotRatio, BlackSpotDistribution, MoreSpotsOnHead};
+
+  void init() {
+     : setControlParameter(ARL.process, ARL.InferenceMethod, ARL.FuzzyAdd);
+     : setControlParameter(ARL.process, ARL.AlphaCut, 0.2);
+  }
+
+  void preProcess() {
+    // Set your own values
+    : ScaleSize = "small";
+    : DorsalFinSize = "small";
+    : AnalFinRayCount = 9;
+    : WhiteOnPelvicFin = "edge";
+    : RedOrangeJawSlash = "no";
+    : BlackSpotsOnHead = 3;
+    : BlackSpotsOnTail = 8;
+    : ForkedTail = "no";
+
+    // or use one of these are 'canned' fish...
+    //:invokeRuleBlock("MountainWhiteFish");  
+    //:invokeRuleBlock("Grayling");  
+    //:invokeRuleBlock("Kokanee");  
+    //:invokeRuleBlock("Cutthroat");  
+    //:invokeRuleBlock("Rainbow");  
+    //:invokeRuleBlock("Golden");  
+    //:invokeRuleBlock("Brook");  
+    //:invokeRuleBlock("Brown");  
+    //:invokeRuleBlock("Lake");  
+
+  }
+  
+  void postProcess() using Script { 
+    : println("Fish name is " + FishName);
+    : println("Fish type is " + FishType);
+    : println("Ruleset <" + this.getName() + "> completed process cycle.\n");
+  }
+
+  void process() using Fuzzy { 
+
+    //=====================================================================
+    // Assertion rules (always processed first).
+    //=====================================================================
+    Salmonidae: AdiposeFin = "yes";
+
+
+    //=====================================================================
+    // Conditional rules.
+    //=====================================================================
+    SpotRatio1:
+      if (BlackSpotsOnTail > 0)
+      then  { 
+      	BlackSpotDistribution = (BlackSpotsOnHead/BlackSpotsOnTail); //fuzzy
+        HeadToTailSpotRatio = (BlackSpotsOnHead / BlackSpotsOnTail); //double
+      }
+
+    SpotRatio2:
+      if (BlackSpotsOnTail <= 0)
+      then  BlackSpotDistribution = 1;
+
+    SpotTest:
+      if (HeadToTailSpotRatio < 1)
+      then  MoreSpotsOnHead = false;
+
+    SpotTest2:
+      if (HeadToTailSpotRatio >= 1)
+      then  MoreSpotsOnHead = true;
+
+    TypeTrout01:
+      if (AdiposeFin == "yes"  and
+          ScaleSize == "small"  and
+          AnalFinRayCount is TroutRange)
+      then  FishType = "Trout";
+
+    TypeOther01:
+      if (AdiposeFin == "yes"  and
+          ForkedTail == "yes"  and
+          ScaleSize != "small")
+      then  FishType = "OtherFish";
+
+    TypeSalmon01:
+      if (AdiposeFin == "yes"  and
+          ScaleSize == "small"  and
+          AnalFinRayCount is SalmonRange)
+      then {
+          FishType = "Salmon";
+          FishName = "Kokanee";  // illustrate multiple consequents
+      }
+
+    FishMountainWhiteFish01:
+      if (FishType == "OtherFish"  and
+          DorsalFinSize == "small")
+      then  FishName = "MountainWhiteFish";
+
+    FishGrayling01:
+      if (FishType == "OtherFish"  and
+          DorsalFinSize == "large")
+      then  FishName = "Grayling";
+
+    FishKokanee01:
+      if (FishType == "Salmon")
+      then  FishName = "Kokanee";
+
+    FishCutthroat01:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "no"  and
+          RedOrangeJawSlash == "yes"  and
+          ForkedTail == "no")
+      then  FishName = "Cutthroat";
+
+    FishRainbow01:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "tip"  and
+          RedOrangeJawSlash == "no"  and
+          BlackSpotsOnHead is not None  and
+          BlackSpotsOnTail is Many  and
+          ForkedTail == "no")
+      then  FishName = "Rainbow";
+
+    FishRainbow02:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "tip"  and
+          RedOrangeJawSlash == "no"  and
+          BlackSpotsOnHead is not None  and
+          BlackSpotsOnTail is Some  and
+          ForkedTail == "no")
+      then  FishName = "Rainbow";
+
+    FishRainbow03:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "tip"  and
+          RedOrangeJawSlash == "no"  and
+          BlackSpotsOnHead is not None  and
+          HeadToTailSpotRatio < 0.5  and
+          ForkedTail == "no")
+      then  FishName = "Rainbow";
+
+    FishGolden01:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "tip"  and
+          RedOrangeJawSlash == "no"  and
+          BlackSpotsOnHead is below Few  and
+          BlackSpotsOnTail is Some  and
+          BlackSpotDistribution is QuadTail  and
+          ForkedTail == "no")
+      then  FishName = "Golden";
+
+    FishGolden02:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "tip"  and
+          RedOrangeJawSlash == "no"  and
+          BlackSpotsOnHead is None  and
+          BlackSpotsOnTail is Many  and
+          BlackSpotDistribution is QuadTail  and
+          ForkedTail == "no")
+      then  FishName = "Golden";
+
+    FishBrook01:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "edge"  and
+          RedOrangeJawSlash == "no"  and
+          ForkedTail == "no")
+      then  FishName = "Brook";
+
+    FishBrown01:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "no"  and
+          RedOrangeJawSlash == "no"  and
+          MoreSpotsOnHead == true  and
+          ForkedTail == "no")
+      then  FishName = "Brown";
+
+    FishLake01:
+      if (FishType == "Trout"  and
+          WhiteOnPelvicFin == "no"  and
+          RedOrangeJawSlash == "no"  and
+          BlackSpotsOnHead is None  and
+          BlackSpotsOnTail is None  and
+          ForkedTail == "yes")
+      then  FishName = "Lake";
+  }
+
+  // These settings produce a MountainWhiteFish.
+  void MountainWhiteFish() {
+    M01: ScaleSize = "medium";
+    M02: DorsalFinSize = "small";
+    M03: AnalFinRayCount = 12;
+    M04: WhiteOnPelvicFin = "no";
+    M05: RedOrangeJawSlash = "no";
+    M06: BlackSpotsOnHead = 0;
+    M07: BlackSpotsOnTail = 0;
+    M08: ForkedTail = "yes";
+  }
+
+  // These settings produce a Grayling.
+  void Grayling() {
+    G01: ScaleSize = "large";
+    G02: DorsalFinSize = "large";
+    G03: AnalFinRayCount = 11;
+    G04: WhiteOnPelvicFin = "no";
+    G05: RedOrangeJawSlash = "no";
+    G06: BlackSpotsOnHead = 4;
+    G07: BlackSpotsOnTail = 0;
+    G08: ForkedTail = "yes";
+  }
+
+  // These settings produce a Kokanee.
+  void Kokanee() {
+    K01: ScaleSize = "small";
+    K02: DorsalFinSize = "small";
+    K03: AnalFinRayCount = 13;
+    K04: WhiteOnPelvicFin = "no";
+    K05: RedOrangeJawSlash = "no";
+    K06: BlackSpotsOnHead = 0;
+    K07: BlackSpotsOnTail = 0;
+    K08: ForkedTail = "yes";
+  }
+
+  // These settings produce a Cutthroat.
+  void Cutthroat() {
+    C01: ScaleSize = "small";
+    C02: DorsalFinSize = "small";
+    C03: AnalFinRayCount = 9;
+    C04: WhiteOnPelvicFin = "no";
+    C05: RedOrangeJawSlash = "yes";
+    C06: BlackSpotsOnHead = 2;
+    C07: BlackSpotsOnTail = 12;
+    C08: ForkedTail = "no";
+  }
+
+
+  // These settings produce a Rainbow.
+  void Rainbow() {
+    R01: ScaleSize = "small";
+    R02: DorsalFinSize = "small";
+    R03: AnalFinRayCount = 9;
+    R04: WhiteOnPelvicFin = "tip";
+    R05: RedOrangeJawSlash = "no";
+    R06: BlackSpotsOnHead = 11;
+    R07: BlackSpotsOnTail = 17;
+    R08: ForkedTail = "no";
+  }
+
+  // These settings produce a Golden.
+  void Golden() {
+    D01: ScaleSize = "small";
+    D02: DorsalFinSize = "small";
+    D03: AnalFinRayCount = 9;
+    D04: WhiteOnPelvicFin = "tip";
+    D05: RedOrangeJawSlash = "no";
+    D06: BlackSpotsOnHead = 3;
+    D07: BlackSpotsOnTail = 20;
+    D08: ForkedTail = "no";
+  }
+
+  // These settings produce a Brook.
+  void Brook() {
+    B01: ScaleSize = "small";
+    B02: DorsalFinSize = "small";
+    B03: AnalFinRayCount = 9;
+    B04: WhiteOnPelvicFin = "edge";
+    B05: RedOrangeJawSlash = "no";
+    B06: BlackSpotsOnHead = 3;
+    B07: BlackSpotsOnTail = 8;
+    B08: ForkedTail = "no";
+  }
+
+  // These settings produce a Brown.
+  void Brown() {
+    W01: ScaleSize = "small";
+    W02: DorsalFinSize = "small";
+    W03: AnalFinRayCount = 9;
+    W04: WhiteOnPelvicFin = "no";
+    W05: RedOrangeJawSlash = "no";
+    W06: BlackSpotsOnHead = 5;
+    W07: BlackSpotsOnTail = 0;
+    W08: ForkedTail = "no";
+  }
+
+  // These settings produce a Lake.
+  void Lake() {
+    L01: ScaleSize = "small";
+    L02: DorsalFinSize = "small";
+    L03: AnalFinRayCount = 9;
+    L04: WhiteOnPelvicFin = "no";
+    L05: RedOrangeJawSlash = "no";
+    L06: BlackSpotsOnHead = 0;
+    L07: BlackSpotsOnTail = 0;
+    L08: ForkedTail = "yes";
+  }
+}

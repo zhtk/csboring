@@ -1,0 +1,107 @@
+ruleset Monkey {
+  import java.util.ArrayList;
+  import java.util.HashMap;
+  
+  predicates {
+    handempty, // Czy małpa może wziąć pudełko
+    holdingbox, // Czy małpa trzyma pudełko
+    boxin, // Pudełko w lokacji
+    inroom, // Małpa jest w pokoju
+    climbing, // Czy małpa stoi na pudełku
+    holdingbanana,
+    bananain,
+    notclimbing // W precondition nie działa not(...)
+  }
+
+  variables {    
+    ArrayList thePlan;
+    String[] planningRequirements = new String[] { ":strips" };
+    Integer returnCode;
+    static HashMap params = new HashMap();
+        
+    Expression goalState = holdingbanana();
+    Expression initState = inroom(A) and handempty() and boxin(B) and bananain(C) and notclimbing();
+  }
+
+  inputs{};
+  outputs{};
+
+  void init() using Script {
+	: setControlParameter("process", ARL.Domain, "MonkeyProblem");
+	: setControlParameter("process", ARL.Requirements, planningRequirements);
+	
+	: params.put("debug", "true");
+	//: setControlParameter("process", ARL.Params, params);
+  }
+
+  void preProcess() { 
+	: setControlParameter("process", ARL.InitialState, initState);
+	: setControlParameter("process", ARL.GoalState, goalState);
+  }
+
+  void process() using Planning {
+    // Poruszanie sie po pokojach
+    move: parameters ()
+			precondition (
+				 inroom(A) and notclimbing()
+			)
+			effect {
+				not( inroom(A) );
+				inroom(B);
+			}
+	// Podnoszenie i opuszczanie pudełka
+	 boxUP:  parameters ()
+			precondition (
+				 boxin(R) and inroom(R) and notclimbing() and handempty()
+			)
+			effect {
+				not( boxin(R) );
+				not( handempty() );
+				holdingbox();
+			}
+	boxDN:  parameters ()
+			precondition (
+				 inroom(R) and notclimbing() and holdingbox()
+			)
+			effect {
+				boxin(R);
+				not( holdingbox() );
+				handempty();
+			}
+	// Branie bananów
+	banan:  parameters ()
+			precondition (
+				 bananain(C) and inroom(C) and climbing() and handempty()
+			)
+			effect {
+				holdingbanana();
+				not( handempty() );
+			}
+	// Wspinanie się i schodzenie
+	climbUP: parameters ()
+			precondition (
+				 boxin(R) and inroom(R) and notclimbing()
+			)
+			effect {
+				climbing();
+				not( notclimbing() );
+			}
+	climbDN: parameters ()
+			precondition (
+				climbing()
+			)
+			effect {
+				notclimbing();
+				not( climbing() );
+			}
+  }
+  
+  void postProcess() {
+	: thePlan = this.getControlParameter("process", ARL.Plan);
+	: returnCode = this.processPlan(thePlan);
+	: if (returnCode) then
+		println("Plan processed successfully.");
+	else
+		println("Plan processing encountered an error.");
+  }
+}

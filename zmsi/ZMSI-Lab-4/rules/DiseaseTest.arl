@@ -1,0 +1,33 @@
+ruleset DiseaseTest {
+	variables {
+		Integer age;
+		Double temp;
+		Integer sysBP;
+		Boolean result;
+	}
+
+	inputs{ age, temp, sysBP };
+	outputs{ result };
+
+	void preProcess(){
+		: result = false;
+	}
+
+	void process() using DecisionTree {
+  		: if (age > 44 and temp > 37)
+  			result = true;
+  		: if (age > 44 and temp <= 37)
+  			result = false;
+  		: if (age <= 44 and sysBP > 120)
+  			result = false;
+  		: if (age <= 44 and sysBP <= 120)
+  			result = true;
+	}
+	
+	void postProcess(){
+		: if (result)
+			println("Patient has disease X");
+		else
+			println("Patient is healthy");
+	}
+}

@@ -1,0 +1,85 @@
+ruleset VehicleBackward {
+
+  library com.ibm.able.rules.AbleGUILib;
+
+  variables {
+    Categorical vehicleType = new Categorical(new String[] {"automobile", "cycle"});
+    Discrete num_wheels = new Discrete(new Double[] {2, 3, 4});
+    Discrete num_doors = new Discrete(new Double[] {2, 3, 4});
+    Categorical motor = new Categorical(new String[] {"no", "yes"});
+    Categorical vehicle = new Categorical(new String[] {"Bicycle", "Tricycle", "Motorcycle", "MiniVan", "Sedan", "Sports Car", "Sports Utility Vehicle"});
+    Categorical size = new Categorical(new String[] {"small", "medium", "large"});
+  }
+
+  inputs {};
+  outputs {vehicle};
+  
+  void init() {
+      : setControlParameter(ARL.process, ARL.Goal, "vehicle") ;
+  }
+
+  void process() using Backward { 
+  
+    // a1: size = "medium";
+    // a2: num_wheels = 4;
+    // a3: num_doors = 3;
+    // a4: motor = "yes";
+    
+    Bicycle:
+      if (vehicleType == "cycle"  and
+          num_wheels == 2  and
+          motor == "no")
+      then  vehicle = "Bicycle";
+
+    Tricycle:
+      if (vehicleType == "cycle"  and
+          num_wheels == 3  and
+          motor == "no")
+      then  vehicle = "Tricycle";
+
+    Motorcycle:
+      if (vehicleType == "cycle"  and
+          num_wheels == 2  and
+          motor == "yes")
+      then  vehicle = "Motorcycle";
+
+    SportsCar:
+      if (vehicleType == "automobile"  and
+          size == "small"  and
+          num_doors == 2)
+      then  vehicle = "Sports Car";
+
+    Sedan:
+      if (vehicleType == "automobile"  and
+          size == "medium"  and
+          num_doors == 4)
+      then  vehicle = "Sedan";
+
+    MiniVan:
+      if (vehicleType == "automobile"  and
+          size == "medium"  and
+          num_doors == 3)
+      then  vehicle = "MiniVan";
+
+    SUV:
+      if (vehicleType == "automobile"  and
+          size == "large"  and
+          num_doors == 4)
+      then  vehicle = "Sports Utility Vehicle";
+
+    Cycle:
+      if (num_wheels < 4)
+      then  vehicleType = "cycle";
+
+    Automobile:
+      if (num_wheels == 4  and
+          motor == "yes")
+      then  vehicleType = "automobile";
+
+  }
+  
+  void postProcess(){
+  	: println("Result is " + vehicle);
+  }
+
+}

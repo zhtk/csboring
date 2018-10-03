@@ -1,0 +1,110 @@
+ruleset RoyalFamily {
+  library com.ibm.able.rules.AblePredicateLib;
+
+  predicates {
+    parent,
+    male,
+    female,
+    mother,
+    father,
+    uncle,
+    sibling,
+    ancestor,
+    descendant,
+    male_descendant
+  };
+
+  variables {
+    String person;
+    String result;
+  }
+
+  inputs{person};
+  outputs{result};
+
+  void init() {
+    : setControlParameter(ARL.process, ARL.Goal, male_descendant(person, X)) ;
+  }
+
+  void process() using Predicate {
+    : female(queen_elizabeth_ii).
+    : male(prince_philip).
+    
+    : female(princess_anne).
+    : male(prince_charles).
+    : male(prince_andrew).
+    : male(prince_edward).
+    : parent(princess_anne, queen_elizabeth_ii).
+    : parent(princess_anne, prince_philip).
+    : parent(prince_charles, queen_elizabeth_ii).
+    : parent(prince_charles, prince_philip).
+    : parent(prince_andrew, queen_elizabeth_ii).
+    : parent(prince_andrew, prince_philip).
+    : parent(prince_edward, queen_elizabeth_ii).
+    : parent(prince_edward, prince_philip).
+    
+    : female(diana).
+    : female(camilla).
+    : male(prince_henry).
+    : male(prince_william).
+    : parent(prince_henry, prince_charles).
+    : parent(prince_henry, camilla).
+    : parent(prince_william, prince_charles).
+    : parent(prince_william, camilla).
+    : female(catherine).
+    : female(princess_charlotte).
+    : male(prince_george).
+    : parent(princess_charlotte, catherine).
+    : parent(princess_charlotte, prince_william).
+    : parent(prince_george, catherine).
+    : parent(prince_george, prince_william).
+    
+    : male(mark_phillips).
+    : male(timothy_laurence).
+    : male(peter_phillips).
+    : parent(peter_phillips, mark_phillips).
+    : parent(peter_phillips, princess_anne).
+    : female(zara_phillips).
+    : parent(zara_phillips, mark_phillips).
+    : parent(zara_phillips, princess_anne).
+    : male(mike_tindall).
+    : female(mia).
+    : parent(mia, zara_phillips).
+    : parent(mia, mike_tindall).
+    : female(autumn_phillips).
+    : female(savannah).
+    : parent(savannah, peter_phillips).
+    : parent(savannah, autumn_phillips).
+    : female(isla).
+    : parent(isla, peter_phillips).
+    : parent(isla, autumn_phillips).
+    
+    : female(sarah).
+    : female(princess_beatrice).
+    : parent(princess_beatrice, sarah).
+    : parent(princess_beatrice, prince_andrew).
+    : female(princess_eugenie).
+    : parent(princess_eugenie, sarah).
+    : parent(princess_eugenie, prince_andrew).
+    : female(sophie).
+    : female(lady_louise).
+    : parent(lady_louise, sophie).
+    : parent(lady_louise, prince_edward).
+    : male(viscount_severn).
+    : parent(viscount_severn, sophie).
+    : parent(viscount_severn, prince_edward).
+    
+    : mother(C, M) :- parent(C, M), female(M).
+    : father(C, F) :- parent(C, F), male(F).
+    : sibling(X, Y) :- parent(X, P), parent(Y, P).
+    : uncle(X, U) :- parent(X, P), sibling(P, U), male(U).
+    : ancestor(P, A) :- parent(P, A).
+    : ancestor(P, A) :- parent(P, B), ancestor(B, A).
+    : descendant(P, D) :- ancestor(D, P).
+    : male_descendant(X, D) :- descendant(X, D), male(D).
+  }
+  
+  void postProcess(){
+    : result = getSolutionList(this, "process");
+  }
+}

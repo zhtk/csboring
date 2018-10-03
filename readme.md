@@ -11,6 +11,7 @@ view they might seem uninteresting.
 * interpreter - interpreter of my own imperative programming language. Implemeted in haskell
 * java - code written during Object Programming course at the beginning of my studies
 * latte - compiler for Java alike language. Don't read the source code, it will rip your eyes out
+* ldi - a bit of Z3 solver and Coq programs
 * linux_driver - Monter device driver for Linux
 * linux_elf - C library for modifying program image during runtime. It intercept calls to specified functions
 * linux_pipes - simple program using linux pipes to parse and execute RPN
@@ -24,5 +25,7 @@ view they might seem uninteresting.
 * postgres - with some addition of PHP using it
 * prolog - simple programs in prolog
 * range tree - ugly implementation of two different kinds of range trees
+* spark - programs in Hadoop and Spark
 * stat_R - code in R, a bit of ML
 * zbd - reports for Advanced Databases course
+* zmsi - course for Advanced Methods of Artificial Intelligence

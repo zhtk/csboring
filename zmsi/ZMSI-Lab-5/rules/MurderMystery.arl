@@ -1,0 +1,90 @@
+ruleset MurderMystery {
+	library com.ibm.able.rules.AblePredicateLib;
+	
+	predicates {
+		person,
+		had_affair,
+		killed_with,
+		motive,
+		smeared_in,
+		owns,
+		operates_identically,
+		owns_probably,
+		suspect
+	};
+
+	variables {
+  		Object result;
+  	}
+
+	inputs {};
+	outputs {result};
+
+	void init() {
+    	: setControlParameter(ARL.process, ARL.Goal, suspect(X)) ;
+  	}
+
+	void process()  using Predicate { 
+		: person(allan,25,m,football_player).
+		: person(allan,25,m,butcher).
+		: person(barbara,22,f,hairdresser).
+		: person(bert,55,m,carpenter).
+		: person(john,25,m,pickpocket).
+
+		: had_affair(barbara,john).
+		: had_affair(barbara,bert).
+		: had_affair(susan,john).
+
+		: killed_with(susan,club).
+
+		: motive(money).
+		: motive(jealousy).
+
+		: smeared_in(katherine,blood).
+		: smeared_in(allan,mud).
+
+		: owns(bert,wooden_leg).
+		: owns(john,pistol).
+
+		: operates_identically(wooden_leg,club).
+		: operates_identically(bar,club).
+		: operates_identically(pair_of_scissors,knife).
+		: operates_identically(football_boot,club).
+
+		: owns_probably(X,football_boot) :-
+			person(X,_,_,football_player).
+
+		: owns_probably(X,pair_of_scissors) :-
+			person(X,_,_,_).
+
+		: owns_probably(X,Obj) :-
+			owns(X,Obj).
+
+		R3: suspect(X) :-
+			killed_with(susan,Weapon),
+			operates_identically(Obj,Weapon),
+			owns_probably(X,Obj).
+
+		R5: suspect(X) :-
+			motive(jealousy),
+            person(X,_,m,_),
+            had_affair(susan,X).
+
+		R7: suspect(X) :-
+            motive(jealousy),
+            person(X,_,f,_),
+            had_affair(X,Man),
+            had_affair(susan,Man).
+
+		R9: suspect(X) :-
+            motive(money),
+            person(X,_,_,pickpocket).
+
+  }
+  
+	void postProcess(){
+		: result = getSolutionList(this, "process");
+		: println(result);
+	}
+
+}

@@ -1,0 +1,111 @@
+ruleset Monkey {
+  import java.util.ArrayList;
+  import java.util.HashMap;
+  
+  predicates {
+    switchon,
+    switchoff,
+    shakeyin,
+    notclimb,
+    climb,
+    boxin,
+    move,
+    holding,
+    notholding
+  }
+
+  variables {    
+    ArrayList thePlan;
+    String[] planningRequirements = new String[] { ":htn" };
+    Integer returnCode;
+    static HashMap params = new HashMap();
+        
+    Expression goalState = switchon(R1) and switchon(R2) and switchon(R3) and switchon(R4);
+    Expression initState = switchoff(R1) and switchon(R2) and switchon(R3) and switchoff(R4) 
+      and shakeyin(R3) and notclimb() and boxin(B1, R1) and boxin(B2, R1) and boxin(B3, R1) and boxin(B4, R1)
+      and move(R1, Corridor) and move(R2, Corridor) and move(R3, Corridor) and move(R4, Corridor)
+      and notholding();
+  }
+
+  inputs{};
+  outputs{};
+
+  void init() using Script {
+	: setControlParameter("process", ARL.Domain, "MonkeyProblem");
+	: setControlParameter("process", ARL.Requirements, planningRequirements);
+  }
+
+  void preProcess() { 
+	: setControlParameter("process", ARL.InitialState, initState);
+	: setControlParameter("process", ARL.GoalState, goalState);
+  }
+
+  void process() using Planning {
+    moveOut: parameters ()
+			precondition (
+				 shakeyin(A) and notclimb() and move(A, B)
+			)
+			effect {
+				not( shakeyin(A) );
+				shakeyin(B);
+			}
+	moveIn: parameters ()
+			precondition (
+				 shakeyin(B) and notclimb() and move(A, B)
+			)
+			effect {
+				not( shakeyin(B) );
+				shakeyin(A);
+			}
+	takeBox: parameters ()
+			precondition (
+				 shakeyin(R) and notclimb() and boxin(B, R) and notholding()
+			)
+			effect {
+				not( notholding() );
+				not( boxin(B, R) );
+				holding(B);
+			}
+	putBox: parameters ()
+			precondition (
+				 shakeyin(R) and notclimb() and holding(B)
+			)
+			effect {
+				notholding();
+				boxin(B, R);
+				not( holding(B) );
+			}
+	climbUp: parameters ()
+			precondition (
+				 shakeyin(R) and boxin(B, R) and notclimb() and notholding()
+			)
+			effect {
+				not( notclimb() );
+				climb();
+			}
+	climbDn: parameters ()
+			precondition (
+				 climb()
+			)
+			effect {
+				notclimb();
+				not( climb() );
+			}
+	switchOn: parameters ()
+			precondition (
+				 climb() and shakeyin(R) and switchoff(R)
+			)
+			effect {
+				switchon(R);
+				not( switchoff(R) );
+			}
+	switchOff: parameters ()
+			precondition (
+				 climb() and shakeyin(R) and switchon(R)
+			)
+			effect {
+				switchoff(R);
+				not( switchon(R) );
+			}
+  }
+}

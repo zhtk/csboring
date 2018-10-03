@@ -1,0 +1,60 @@
+ruleset Lights {
+
+  variables {
+    Fuzzy Red = new Fuzzy(0, 255)  {
+      Sigmoid   High = new Sigmoid  (220, 240, 255, ARL.Up);
+      Trapezoid Medium = new Trapezoid(170, 200, 220, 240);
+      Trapezoid Whatever = new Trapezoid(110, 130, 170, 190);
+      Trapezoid Low  = new Trapezoid(0, 10, 110, 130);
+    };
+
+    Fuzzy Green = new Fuzzy(0, 255)  {
+      Sigmoid  Low = new Sigmoid (0, 80, 90, ARL.Down);
+      Trapezoid Unimportant = new Trapezoid(75,  80, 120, 130);
+      Trapezoid Medium  = new Trapezoid(130,  140, 200, 210);
+      Trapezoid High  = new Trapezoid(200,  210, 250, 255);
+    };
+
+    Fuzzy Blue = new Fuzzy(0, 255)  {
+      Trapezoid Low  = new Trapezoid(0, 10, 70, 80);
+      Trapezoid Medium  = new Trapezoid(75, 80, 100, 110);
+      Trapezoid High  = new Trapezoid(100, 120, 250, 255);
+    };
+    
+    Integer R;
+    Integer G;
+    Integer B;
+    String result = "Unknown";
+  }
+
+  inputs {R, G, B};
+  outputs {result};
+
+  void init() {
+     : setControlParameter(ARL.process, ARL.InferenceMethod, ARL.FuzzyAdd);
+     : setControlParameter(ARL.process, ARL.AlphaCut, 0.2);
+  }
+
+  void process() using Fuzzy {
+    // Żółty - Medium Red, Green > 200 (High), Blue < 110 (!= High)
+    // Zielony - G > 130 (Medium | High), R < 130 (Low), B < 70 (Low)
+    // Czerwony - G < 80 (Low), B < 80 (Low), R > 200 (High)
+    
+     : Red = R;
+     : Blue = B;
+     : Green = G;
+     
+     : if (Red is Medium and Green is High and Blue is Low)
+       then	result = "yellow";
+     : if (Red is Medium and Green is High and Blue is Medium)
+       then	result = "yellow";
+     : if (Red is Low and Green is High and Blue is Low)
+       then result = "green";
+     : if (Red is Low and Green is Medium and Blue is Low)
+       then result = "green";
+     : if (Red is High and Green is Low and Blue is Low)
+       then result = "red";
+     : if (Red is Medium and Green is Low and Blue is Low)
+       then result = "red";
+  }
+}

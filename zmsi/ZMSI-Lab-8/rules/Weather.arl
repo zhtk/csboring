@@ -1,0 +1,65 @@
+ruleset Weather {
+
+  variables {
+    Fuzzy Rain = new Fuzzy(0, 20)  {
+      Sigmoid   No = new Sigmoid(0, 0.25, 0.5, ARL.Up);
+      Trapezoid Small = new Trapezoid(0.25, 0.5, 1, 1.5);
+      Trapezoid Raining = new Trapezoid(1.5, 2, 15, 20);
+    };
+
+    Fuzzy Clouds = new Fuzzy(0, 100)  {
+      Sigmoid  No = new Sigmoid (0, 10, 15, ARL.Down);
+      Trapezoid Medium  = new Trapezoid(15,  20, 45, 50);
+      Trapezoid High  = new Trapezoid(50, 60, 90, 100);
+    };
+
+    Fuzzy Temperature = new Fuzzy(-50, 50)  {
+      Trapezoid Hot  = new Trapezoid(20, 30, 45, 50);
+      Trapezoid Normal  = new Trapezoid(5, 10, 15, 25);
+      Trapezoid Cold  = new Trapezoid(-50, -45, 5, 15);
+    };
+    
+    Fuzzy Wind = new Fuzzy(0, 10)  {
+      Sigmoid   No = new Sigmoid(0, 0.05, 0.1, ARL.Up);
+      Trapezoid Small = new Trapezoid(0.1, 0.15, 0.2, 0.5);
+      Trapezoid Windy = new Trapezoid(0.5, 1, 9, 10);
+    };
+    
+    Double rainfall; // in millimetres
+    Integer cloudiness; // in percents
+    Integer temperature;
+    Double wind; // in m/s
+    String falltype; // type of fall: snow, rain, hail, none
+    String result = "Normal"; // normal, dry, windy or rain
+  }
+
+  inputs {rainfall, cloudiness, temperature, wind, falltype};
+  outputs {result};
+
+  void init() {
+     : setControlParameter(ARL.process, ARL.InferenceMethod, ARL.FuzzyAdd);
+     : setControlParameter(ARL.process, ARL.AlphaCut, 0.2);
+  }
+
+  void process() using Fuzzy {    
+     : Rain = rainfall;
+     : Clouds = cloudiness;
+     : Temperature = temperature;
+     : Wind = wind;
+     
+     : if (Rain is Raining)
+     	result = "rain";
+     	
+     : if (Rain is Small and Clouds is High)
+     	result = "rain";
+     	
+     : if (Wind is Windy)
+     	result = "windy";
+     
+     : if (Temperature is Hot and Rain is No)
+     	result = "dry";
+     
+     : if (falltype != "none")
+     	result = "rain";
+  }
+}

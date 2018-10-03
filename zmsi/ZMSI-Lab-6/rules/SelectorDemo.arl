@@ -1,0 +1,58 @@
+/** An ABLE RuleSet to show usage of Selector variables and Expression variables */
+ruleset SelectorDemo {
+
+  import java.util.Collection; 
+  import java.util.Iterator; 
+  import java.util.ArrayList; 
+  import com.ibm.able.examples.rules.Customer;
+
+  variables {
+    String helloWorld = new String("Able rules!"); // One variable minimum
+    Customer customer = new Customer("a", 85, "us", 200000) ; 
+  
+    Integer  income = 0 ; 
+    Double profit = 0.05 ;  // 5%
+    Expression isGoldCustomer =  customer.income > 100000 and profit > 0.03 ;   
+    Expression isSeniorCitizen = customer.age > 60 ; 
+    Selector goldCustomer = new Selector(this.getVariable("customer"), isGoldCustomer, true) ;    
+    Collection goldCustomers = new ArrayList(); 
+    Iterator i ; 
+
+    Expression myExpr1 ; 
+    Boolean booleanVar ; 
+  } 
+
+  inputs{};
+  outputs{};
+
+  void preProcess() {
+      : wm.clear();
+      : wm.assert( new Customer("b", 50, "us",  80000.0)) ;
+      : wm.assert( new Customer("c", 70, "us", 120000.0)) ;
+      : wm.assert( new Customer("d", 65, "us", 200000.0)) ;
+  }
+
+  void process() using Script {
+    Rule0: println(helloWorld); // One rule minimum 
+         : income = customer.income ; 
+    Rule1: if (isGoldCustomer) then println("hey, it's a gold customer!"); 
+    Rule2: if (isSeniorCitizen == true) then println("hey, it's a senior citizen!"); 
+    Rule3: if (isGoldCustomer == true and isSeniorCitizen) then println("hey, it's a gold senior customer!"); 
+    Rule4: if (isGoldCustomer and isSeniorCitizen) then println("hey, it's a gold senior customer!"); 
+
+    Rule5:  when ( Customer customer ( customer.age > 60) )
+            do {
+                println("found a senior customer ... " + customer.age) ;
+            }
+
+    Rule6: goldCustomers = wm.findAll( goldCustomer); // do a query against working memory
+    Rule7: for (i =goldCustomers.iterator() ; i.hasNext()==true ;) {
+          println("findAll output gold customer = " + i.next());  // show the results
+     };
+     
+     : myExpr1 =  new Expression(this, "1240 > 3") ;
+     : booleanVar = myExpr1.getBooleanValue() ; // evaluate the expression contained in expression variable
+     : if (booleanVar) println ("expression is true");  else println("expression is false");
+  }
+ 
+}

@@ -1,0 +1,32 @@
+ruleset PolicyExample {
+	
+	variables {
+		Categorical Weekday = new Categorical(new String[] {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"});
+	}
+	
+	inputs{};
+	outputs{};
+	
+	void preProcess(){
+		: Weekday = "Wed";
+	}
+	
+	void process() using Policy {
+		workdayPolicy [2]:
+			preconditions (
+				Weekday == "Mon" or Weekday == "Tue" or Weekday == "Wed" or Weekday == "Thu" or Weekday == "Fri"
+			)
+			decisions {
+				println("It's a workday...");
+			}
+			
+		weekendPolicy [1] :
+			preconditions (
+				Weekday == "Fri" or Weekday == "Sat" or Weekday == "Sun"
+			)
+			decisions {
+				println("It's a weekend!");
+			}
+			
+	}
+}

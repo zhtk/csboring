@@ -1,0 +1,28 @@
+﻿1. Run sets of rules VehicleForward and VehicleBackward by creating appropriate
+running configurations in Eclipse.
+2. Test functionalities of graphical interface in the Backward engine by commenting assertions
+in lines 23-26. After running you should see a displayed window which asks you for selecting
+appropriate values.
+3. Prepare a set of rules allowing to solve simple puzzles 
+(the skeleton of functionalities is in the class RiddleApp, the possible values of the attributes
+are in the class RiddleUtils). 
+4. Analyze the logic of the engine DecisionTree based on the example from the file 
+rules/DiseaseTest.arl and the logic of the class AbleRuleAgentImpl based on the class DiseaseTestApp.
+5. By using the engine DecisionTree prepare the set of rules describing the 
+scheme of nutritioning of a robot :)
+--------------------------------------------------------------------------------
+Eat     |       Color   |       Shape     |     Weight      |       Radioactive 
+--------------------------------------------------------------------------------
+yes     |       red     |       cube	  |     light       |       false
+yes     |       red     |       cube 	  |     light       |       false
+yes     |       red     |       cube 	  |     light       |       false
+no      |       red     |       cube	  |     light       |       true
+yes     |       green   |       triangle  |     heavy       |       false
+yes     |       green   |       oval 	  |     heavy       |       true
+yes     |       blue    |       cube 	  |     light       |       false
+yes     |       blue    |       triangle  |     light       |       false
+no      |       blue    |       oval 	  |     heavy       |       true
+no      |       blue    |       oval	  |     heavy       |       false
+no      |       blue    |       triangle  |     heavy       |       false
+no      |       blue    |       triangle  |     heavy       |       true
+---------------------------------------------------------------------------------
