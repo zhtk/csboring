@@ -24,6 +24,7 @@ view they might seem uninteresting.
 * other - other things, for example C++ BST tree written in functional style
 * postgres - with some addition of PHP using it
 * prolog - simple programs in prolog
+* pwasm - assembler programming course
 * range tree - ugly implementation of two different kinds of range trees
 * spark - programs in Hadoop and Spark
 * stat_R - code in R, a bit of ML
