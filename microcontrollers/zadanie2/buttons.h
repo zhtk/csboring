@@ -1,0 +1,33 @@
+#ifndef _BUTTON_H_
+#define _BUTTON_H_
+
+#define BUTTON_COUNT 7
+
+#define BUTTON_USER_GPIO      GPIOC
+#define BUTTON_JOY_LEFT_GPIO  GPIOB
+#define BUTTON_JOY_RIGHT_GPIO GPIOB
+#define BUTTON_JOY_UP_GPIO    GPIOB
+#define BUTTON_JOY_DOWN_GPIO  GPIOB
+#define BUTTON_JOY_FIRE_GPIO  GPIOB
+#define BUTTON_MODE_GPIO      GPIOA
+
+#define BUTTON_USER_PIN      13
+#define BUTTON_JOY_LEFT_PIN  3
+#define BUTTON_JOY_RIGHT_PIN 4
+#define BUTTON_JOY_UP_PIN    5
+#define BUTTON_JOY_DOWN_PIN  6
+#define BUTTON_JOY_FIRE_PIN  10
+#define BUTTON_MODE_PIN      0
+
+#define BUTTON_USER_EXTI      EXTI_PR_PR13
+#define BUTTON_JOY_LEFT_EXTI  EXTI_PR_PR3
+#define BUTTON_JOY_RIGHT_EXTI EXTI_PR_PR4
+#define BUTTON_JOY_UP_EXTI    EXTI_PR_PR5
+#define BUTTON_JOY_DOWN_EXTI  EXTI_PR_PR6
+#define BUTTON_JOY_FIRE_EXTI  EXTI_PR_PR10
+#define BUTTON_MODE_EXTI      EXTI_PR_PR0
+
+extern void EnableButtons(void);
+extern void ReadButtons(void);
+
+#endif

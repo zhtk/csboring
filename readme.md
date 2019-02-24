@@ -17,6 +17,7 @@ view they might seem uninteresting.
 * linux_pipes - simple program using linux pipes to parse and execute RPN
 * linux_ptrace_syscall - patch for Linux kernel which allows for syscall injection to tracee
 * linux_threads - multithreaded program simulating game with very complicated rules
+* microcontrollers - STM32 microcontrollers programming course
 * net_chat - UDP chat server and client
 * net_radio - there are two programs: `player` extract music from icycast protocol, `master` receives commands via `telnet` protocol and casts them to `player`s with short UDP messages
 * ocaml
