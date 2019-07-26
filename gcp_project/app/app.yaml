@@ -1,0 +1,19 @@
+runtime: python37
+
+handlers:
+- url: .*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301
+env_variables:
+  # So you say I can't include external files here?
+  PROJECT_ID: XXXXX
+  CLOUD_STORAGE_BUCKET_ORIGINAL: projekt2_original
+  CLOUD_STORAGE_BUCKET_RESIZED: projekt2_resized
+  FLASK_SECRET_KEY: "XXXXX"
+  GOOGLE_OAUTH2_CLIENT_ID: XXXXX
+  GOOGLE_OAUTH2_CLIENT_SECRET: XXXXX
+  IMAGE_RESIZE_X: "200"
+  IMAGE_RESIZE_Y: "200"
+  SENDGRID_KEY: XXXXX
+  SERVICE_ACCOUNT_EMAIL: XXXXX

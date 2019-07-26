@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if upload_failed %}
+<div class="alert alert-danger">
+  <strong>Error!</strong> Image upload failed! {{ upload_failed }}
+</div>
+{% endif %}
+
+{% if upload_success %}
+ <div class="alert alert-success">
+  <strong>Success!</strong> Your image <a href="{{ upload_success }}" class="alert-link">{{ upload_title }}</a> has been uploaded.
+</div>
+{% endif %}
+
+<h3>List of images</h3>
+
+<table class="table">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col">Title</th>
+      <th scope="col">Filename</th>
+      <th scope="col">Original URL</th>
+      <th scope="col">Resized URL</th>
+      <th scope="col">Errors</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for image in images %}
+    <tr>
+      <td>{{ image['title'] or '???' }}</td>
+      <td>{{ image['filename'] or '???' }}</td>
+
+      {% if 'original_url' in image %}
+      <td><a href="{{ image['original_url'] or '' }}">Original image URL</a></td>
+      {% else %}
+      <td></td>
+      {% endif %}
+
+      {% if 'resized_url' in image %}
+      <td><a href="{{ image['resized_url'] or '' }}">Resized image URL</a></td>
+      {% else %}
+      <td></td>
+      {% endif %}
+
+      <td>{{ image.error or 'No error' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>Upload new image</h3>
+
+<form method="POST" enctype="multipart/form-data">
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" name="title" id="title" class="form-control"/>
+  </div>
+
+  <div class="form-group">
+    <label for="image">Image</label>
+    <input type="file" name="image" id="image" class="form-control"/>
+  </div>
+
+  <button type="submit" class="btn btn-success">Upload</button>
+</form>
+
+{% endblock %}

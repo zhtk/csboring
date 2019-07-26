@@ -1,0 +1,12 @@
+steps:
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["app", "deploy"]
+  dir: 'app'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['functions', 'deploy', 'image_uploaded', '--env-vars-file', 'env.yaml', '--trigger-resource', 'projekt2_original', '--runtime', 'python37', '--entry-point', 'image_uploaded', '--trigger-event', 'google.storage.object.finalize']
+  dir: 'functions'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['functions', 'deploy', 'send_email', '--env-vars-file', 'env.yaml', '--trigger-resource', 'projekt2_resized', '--runtime', 'python37', '--entry-point', 'send_email', '--trigger-event', 'google.storage.object.finalize']
+  dir: 'functions'
+timeout: "1600s"
+

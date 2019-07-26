@@ -1,0 +1,5 @@
+Flask>=1.0.0
+google-auth==1.6.3
+google-cloud-datastore==1.7.1
+google-cloud-storage==1.13.0
+oauth2client==4.1.3

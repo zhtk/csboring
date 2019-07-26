@@ -5,6 +5,7 @@ view they might seem uninteresting.
 
 ## Table of contents
 
+* gcp_project - Project for Google Cloud Platform class
 * haskell_automata - non deterministic automata implementation in haskell
 * haskell_lib - reimplementing base haskell library with some extensions
 * instant - compiler for arithmetic expressions
